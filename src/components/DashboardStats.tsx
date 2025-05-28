@@ -1,23 +1,34 @@
 
 import React from 'react';
 import { TrendingUp, ShoppingCart, Package, DollarSign } from 'lucide-react';
+import { useDashboardStats } from '@/hooks/useDashboardData';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface StatCardProps {
   title: string;
   value: string;
   change: string;
   icon: React.ReactNode;
+  loading?: boolean;
 }
 
-const StatCard = ({ title, value, change, icon }: StatCardProps) => (
-  <div className="bg-white p-6 rounded-lg border border-gray-200">
+const StatCard = ({ title, value, change, icon, loading }: StatCardProps) => (
+  <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between">
-      <div>
+      <div className="space-y-2">
         <p className="text-sm font-medium text-gray-600">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-        <p className="text-sm text-green-600 mt-1">{change}</p>
+        {loading ? (
+          <Skeleton className="h-8 w-24" />
+        ) : (
+          <p className="text-3xl font-bold text-gray-900">{value}</p>
+        )}
+        {loading ? (
+          <Skeleton className="h-4 w-32" />
+        ) : (
+          <p className="text-sm text-green-600 font-medium">{change}</p>
+        )}
       </div>
-      <div className="text-gray-400">
+      <div className="text-gray-400 bg-gray-50 p-3 rounded-lg">
         {icon}
       </div>
     </div>
@@ -25,28 +36,30 @@ const StatCard = ({ title, value, change, icon }: StatCardProps) => (
 );
 
 const DashboardStats = () => {
-  const stats = [
+  const { data: stats, isLoading } = useDashboardStats();
+
+  const statsData = [
     {
       title: 'Total Revenue',
-      value: '₹45,23,189',
+      value: isLoading ? '₹0' : `₹${stats?.totalRevenue?.toLocaleString('en-IN') || '0'}`,
       change: '+20.1% from last month',
       icon: <TrendingUp className="w-6 h-6" />
     },
     {
       title: 'Total Sales',
-      value: '+573',
+      value: isLoading ? '0' : `${stats?.totalSales || 0}`,
       change: '+19% from last month',
       icon: <ShoppingCart className="w-6 h-6" />
     },
     {
       title: 'Current Stock',
-      value: '246',
+      value: isLoading ? '0' : `${stats?.currentStock || 0}`,
       change: '+7 added this week',
       icon: <Package className="w-6 h-6" />
     },
     {
       title: 'Total Profit',
-      value: '₹12,45,678',
+      value: isLoading ? '₹0' : `₹${stats?.totalProfit?.toLocaleString('en-IN') || '0'}`,
       change: '+15.2% from last month',
       icon: <DollarSign className="w-6 h-6" />
     }
@@ -54,8 +67,8 @@ const DashboardStats = () => {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {stats.map((stat, index) => (
-        <StatCard key={index} {...stat} />
+      {statsData.map((stat, index) => (
+        <StatCard key={index} {...stat} loading={isLoading} />
       ))}
     </div>
   );
