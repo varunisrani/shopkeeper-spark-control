@@ -13,7 +13,7 @@ export const useDashboardStats = () => {
 
       if (salesError) throw salesError;
 
-      const totalRevenue = salesData?.reduce((sum, sale) => sum + parseFloat(sale.final_amount), 0) || 0;
+      const totalRevenue = salesData?.reduce((sum, sale) => sum + parseFloat(sale.final_amount.toString()), 0) || 0;
 
       // Get total sales count
       const { count: salesCount, error: salesCountError } = await supabase
@@ -39,7 +39,7 @@ export const useDashboardStats = () => {
 
       const totalProfit = inventoryData
         ?.filter(item => item.status === 'Sold')
-        .reduce((sum, item) => sum + (parseFloat(item.sale_price) - parseFloat(item.purchase_price)), 0) || 0;
+        .reduce((sum, item) => sum + (parseFloat(item.sale_price.toString()) - parseFloat(item.purchase_price.toString())), 0) || 0;
 
       return {
         totalRevenue,
@@ -73,8 +73,9 @@ export const useSalesChart = () => {
           acc[date] = { sales: 0, profit: 0 };
         }
         
-        acc[date].sales += parseFloat(sale.final_amount);
-        acc[date].profit += parseFloat(sale.final_amount) * 0.3; // Assume 30% profit margin
+        const saleAmount = parseFloat(sale.final_amount.toString());
+        acc[date].sales += saleAmount;
+        acc[date].profit += saleAmount * 0.3; // Assume 30% profit margin
         
         return acc;
       }, {} as Record<string, { sales: number; profit: number }>);
@@ -113,7 +114,7 @@ export const useRecentSales = () => {
         id: sale.customer_id?.slice(0, 2).toUpperCase() || 'UN',
         name: sale.customers?.name || 'Unknown Customer',
         product: `${sale.inventory?.brand} ${sale.inventory?.model}`,
-        amount: `+₹${parseFloat(sale.final_amount).toLocaleString('en-IN')}`,
+        amount: `+₹${parseFloat(sale.final_amount.toString()).toLocaleString('en-IN')}`,
       })) || [];
     },
   });

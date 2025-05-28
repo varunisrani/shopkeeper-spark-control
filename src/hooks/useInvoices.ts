@@ -31,7 +31,7 @@ export const useInvoices = () => {
         id: invoice.invoice_id,
         customer: invoice.customers?.name || 'Unknown Customer',
         product: `${invoice.sales?.inventory?.brand || ''} ${invoice.sales?.inventory?.model || ''}`,
-        amount: `₹${parseFloat(invoice.total_amount).toLocaleString('en-IN')}`,
+        amount: `₹${parseFloat(invoice.total_amount.toString()).toLocaleString('en-IN')}`,
         date: new Date(invoice.invoice_date).toLocaleDateString('en-IN'),
         status: invoice.status,
       })) || [];

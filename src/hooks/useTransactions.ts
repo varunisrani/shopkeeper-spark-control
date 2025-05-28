@@ -34,7 +34,7 @@ export const useTransactions = () => {
         type: transaction.type,
         product: `${transaction.inventory?.brand || ''} ${transaction.inventory?.model || ''}`,
         quantity: transaction.quantity,
-        amount: `₹${parseFloat(transaction.amount).toLocaleString('en-IN')}`,
+        amount: `₹${parseFloat(transaction.amount.toString()).toLocaleString('en-IN')}`,
         customer: transaction.customers?.name || '-',
         supplier: transaction.suppliers?.name || '-',
       })) || [];
