@@ -21,7 +21,7 @@ const App = () => (
       <BrowserRouter>
         <div className="min-h-screen bg-gray-50">
           <Navigation />
-          <main className="max-w-7xl mx-auto px-6 py-8">
+          <main className="w-full">
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/inventory" element={<Inventory />} />

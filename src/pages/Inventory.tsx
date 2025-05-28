@@ -40,22 +40,22 @@ const Inventory = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-3 sm:p-4 lg:p-6">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
             <div>
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96 mt-2" />
+              <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
+              <Skeleton className="h-3 sm:h-4 w-64 sm:w-96 mt-2" />
             </div>
             <Skeleton className="h-10 w-32" />
           </div>
-          <div className="flex space-x-4">
+          <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
             <Skeleton className="h-10 flex-1" />
             <Skeleton className="h-10 w-32" />
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200">
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200">
             {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="p-6 border-b border-slate-100 last:border-b-0">
+              <div key={index} className="p-4 sm:p-6 border-b border-slate-100 last:border-b-0">
                 <Skeleton className="h-4 w-full" />
               </div>
             ))}
@@ -67,31 +67,33 @@ const Inventory = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl">
-              <Package className="w-6 h-6 text-white" />
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="p-2 sm:p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg sm:rounded-xl">
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
                 Inventory Management
               </h1>
-              <p className="text-slate-600 mt-1 text-lg">Manage all mobile phone inventory with detailed tracking</p>
+              <p className="text-slate-600 mt-1 text-sm sm:text-base lg:text-lg">Manage all mobile phone inventory with detailed tracking</p>
             </div>
           </div>
-          <AddInventoryDialog />
+          <div className="w-full sm:w-auto">
+            <AddInventoryDialog />
+          </div>
         </div>
 
-        <div className="flex space-x-4">
+        <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
             <Input
               placeholder="Search by brand, model, or IMEI..."
-              className="pl-10 border-slate-300 focus:border-blue-500 bg-white rounded-xl"
+              className="pl-10 border-slate-300 focus:border-blue-500 bg-white rounded-lg sm:rounded-xl"
             />
           </div>
-          <div className="flex items-center space-x-2 bg-white border border-slate-300 rounded-xl px-4">
+          <div className="flex items-center space-x-2 bg-white border border-slate-300 rounded-lg sm:rounded-xl px-3 sm:px-4 h-10">
             <Filter className="w-4 h-4 text-slate-500" />
             <select className="bg-transparent text-sm focus:outline-none">
               <option>All Status</option>
@@ -102,7 +104,62 @@ const Inventory = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
+        {/* Mobile Card View */}
+        <div className="block lg:hidden space-y-4">
+          {inventory?.map((item) => {
+            const profit = parseFloat(item.sale_price.toString()) - parseFloat(item.purchase_price.toString());
+            const profitMargin = ((profit / parseFloat(item.purchase_price.toString())) * 100).toFixed(1);
+            
+            return (
+              <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-bold text-slate-900">{item.brand}</h3>
+                    <p className="text-sm font-medium text-slate-700">{item.model}</p>
+                    <p className="text-xs text-slate-500">{item.variant}</p>
+                  </div>
+                  <Badge variant="secondary" className={getStatusColor(item.status)}>
+                    {item.status}
+                  </Badge>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">IMEI:</span>
+                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{item.imei}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">Purchase:</span>
+                    <span className="text-xs">₹{parseFloat(item.purchase_price.toString()).toLocaleString('en-IN')}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">Sale Price:</span>
+                    <span className="text-xs font-bold">₹{parseFloat(item.sale_price.toString()).toLocaleString('en-IN')}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <Badge variant="secondary" className={getConditionColor(item.condition)}>
+                      {item.condition}
+                    </Badge>
+                    <div className="text-right">
+                      <div className="text-xs text-emerald-600 font-bold">
+                        Profit: ₹{profit.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        Margin: {profitMargin}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
