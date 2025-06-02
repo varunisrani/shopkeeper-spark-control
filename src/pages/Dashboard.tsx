@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import DashboardStats from '@/components/DashboardStats';
 import SalesChart from '@/components/SalesChart';
 import RecentSales from '@/components/RecentSales';
+import StockStatus from '@/components/StockStatus';
 import AddInventoryDialog from '@/components/AddInventoryDialog';
 import RecordSaleDialog from '@/components/RecordSaleDialog';
 
@@ -34,6 +35,8 @@ const Dashboard = () => {
             <RecentSales />
           </div>
         </div>
+
+        <StockStatus />
       </div>
     </div>
   );
