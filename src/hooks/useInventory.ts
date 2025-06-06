@@ -8,11 +8,17 @@ export interface InventoryItem {
   brand: string;
   model: string;
   variant: string;
+  color?: string;
   imei: string;
   purchase_price: number;
   sale_price: number;
   condition: string;
   battery_health: number;
+  warranty_months?: number;
+  quantity?: number;
+  venue?: string;
+  inward_by?: string;
+  additional_notes?: string;
   status: string;
   purchase_date: string;
   suppliers?: {
@@ -24,11 +30,17 @@ export interface NewInventoryItem {
   brand: string;
   model: string;
   variant: string;
+  color?: string;
   imei: string;
   purchase_price: number;
   sale_price: number;
   condition: string;
   battery_health: number;
+  warranty_months?: number;
+  quantity?: number;
+  venue?: string;
+  inward_by?: string;
+  additional_notes?: string;
   supplier_id: string;
   purchase_date: string;
 }
