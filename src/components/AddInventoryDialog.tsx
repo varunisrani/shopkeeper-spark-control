@@ -9,7 +9,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
 import { useSuppliers } from '@/hooks/useSuppliers';
-import { toast } from 'sonner';
 
 const AddInventoryDialog = () => {
   const [open, setOpen] = useState(false);
@@ -41,14 +40,14 @@ const AddInventoryDialog = () => {
     e.preventDefault();
     console.log('Form submitted with data:', formData);
     
-    // Convert empty strings to appropriate values for submission
+    // Convert string values to appropriate types for submission
     const submitData = {
       ...formData,
-      purchase_price: parseFloat(formData.purchase_price) || 0,
-      sale_price: parseFloat(formData.sale_price) || 0,
-      battery_health: parseInt(formData.battery_health) || 100,
-      warranty_months: parseInt(formData.warranty_months) || 0,
-      quantity: parseInt(formData.quantity) || 1,
+      purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price.toString()) : 0,
+      sale_price: formData.sale_price ? parseFloat(formData.sale_price.toString()) : 0,
+      battery_health: formData.battery_health ? parseInt(formData.battery_health.toString()) : 100,
+      warranty_months: formData.warranty_months ? parseInt(formData.warranty_months.toString()) : 0,
+      quantity: formData.quantity ? parseInt(formData.quantity.toString()) : 1,
     };
 
     addInventoryMutation.mutate(submitData, {
@@ -78,7 +77,7 @@ const AddInventoryDialog = () => {
     });
   };
 
-  const handleInputChange = (field: keyof NewInventoryItem, value: string | number) => {
+  const handleInputChange = (field: keyof NewInventoryItem, value: string) => {
     console.log(`Updating ${field}:`, value);
     setFormData(prev => ({
       ...prev,
