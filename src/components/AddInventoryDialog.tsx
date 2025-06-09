@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -18,12 +19,12 @@ const AddInventoryDialog = () => {
     variant: '',
     color: '',
     imei: '',
-    purchase_price: 0,
-    sale_price: 0,
+    purchase_price: '',
+    sale_price: '',
     condition: 'New',
-    battery_health: 100,
-    warranty_months: 12,
-    quantity: 1,
+    battery_health: '',
+    warranty_months: '',
+    quantity: '',
     venue: '',
     inward_by: '',
     additional_notes: '',
@@ -40,13 +41,17 @@ const AddInventoryDialog = () => {
     e.preventDefault();
     console.log('Form submitted with data:', formData);
     
-    // Validate required fields
-    if (!formData.brand || !formData.model || !formData.imei || !formData.supplier_id) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
+    // Convert empty strings to appropriate values for submission
+    const submitData = {
+      ...formData,
+      purchase_price: parseFloat(formData.purchase_price) || 0,
+      sale_price: parseFloat(formData.sale_price) || 0,
+      battery_health: parseInt(formData.battery_health) || 100,
+      warranty_months: parseInt(formData.warranty_months) || 0,
+      quantity: parseInt(formData.quantity) || 1,
+    };
 
-    addInventoryMutation.mutate(formData, {
+    addInventoryMutation.mutate(submitData, {
       onSuccess: () => {
         console.log('Inventory item added successfully, closing dialog');
         setOpen(false);
@@ -57,12 +62,12 @@ const AddInventoryDialog = () => {
           variant: '',
           color: '',
           imei: '',
-          purchase_price: 0,
-          sale_price: 0,
+          purchase_price: '',
+          sale_price: '',
           condition: 'New',
-          battery_health: 100,
-          warranty_months: 12,
-          quantity: 1,
+          battery_health: '',
+          warranty_months: '',
+          quantity: '',
           venue: '',
           inward_by: '',
           additional_notes: '',
@@ -99,7 +104,7 @@ const AddInventoryDialog = () => {
           {/* Row 1: Brand and Model */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand *</Label>
+              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand</Label>
               <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select brand" />
@@ -114,13 +119,12 @@ const AddInventoryDialog = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="model" className="text-sm font-medium text-gray-700">Model *</Label>
+              <Label htmlFor="model" className="text-sm font-medium text-gray-700">Model</Label>
               <Input
                 id="model"
                 value={formData.model}
                 onChange={(e) => handleInputChange('model', e.target.value)}
                 placeholder="e.g. iPhone 13 Pro"
-                required
                 className="mt-1"
               />
             </div>
@@ -153,13 +157,12 @@ const AddInventoryDialog = () => {
           {/* Row 3: IMEI and Condition */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="imei" className="text-sm font-medium text-gray-700">IMEI/Serial Number *</Label>
+              <Label htmlFor="imei" className="text-sm font-medium text-gray-700">IMEI/Serial Number</Label>
               <Input
                 id="imei"
                 value={formData.imei}
                 onChange={(e) => handleInputChange('imei', e.target.value)}
                 placeholder="Enter IMEI or Serial number"
-                required
                 className="mt-1"
               />
             </div>
@@ -182,26 +185,24 @@ const AddInventoryDialog = () => {
           {/* Row 4: Purchase Price and Sale Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹) *</Label>
+              <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹)</Label>
               <Input
                 id="purchase_price"
                 type="number"
                 value={formData.purchase_price}
-                onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                required
+                onChange={(e) => handleInputChange('purchase_price', e.target.value)}
+                placeholder="Enter purchase price"
                 className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price (₹) *</Label>
+              <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price (₹)</Label>
               <Input
                 id="sale_price"
                 type="number"
                 value={formData.sale_price}
-                onChange={(e) => handleInputChange('sale_price', parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                required
+                onChange={(e) => handleInputChange('sale_price', e.target.value)}
+                placeholder="Enter sale price"
                 className="mt-1"
               />
             </div>
@@ -217,7 +218,7 @@ const AddInventoryDialog = () => {
                 min="0"
                 max="100"
                 value={formData.battery_health}
-                onChange={(e) => handleInputChange('battery_health', parseInt(e.target.value) || 100)}
+                onChange={(e) => handleInputChange('battery_health', e.target.value)}
                 placeholder="e.g. 95"
                 className="mt-1"
               />
@@ -228,7 +229,7 @@ const AddInventoryDialog = () => {
                 id="warranty_months"
                 type="number"
                 value={formData.warranty_months}
-                onChange={(e) => handleInputChange('warranty_months', parseInt(e.target.value) || 0)}
+                onChange={(e) => handleInputChange('warranty_months', e.target.value)}
                 placeholder="e.g. 12"
                 className="mt-1"
               />
@@ -244,19 +245,18 @@ const AddInventoryDialog = () => {
                 type="number"
                 min="1"
                 value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                placeholder="1"
+                onChange={(e) => handleInputChange('quantity', e.target.value)}
+                placeholder="Enter quantity"
                 className="mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase *</Label>
+              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase</Label>
               <Input
                 id="purchase_date"
                 type="date"
                 value={formData.purchase_date}
                 onChange={(e) => handleInputChange('purchase_date', e.target.value)}
-                required
                 className="mt-1"
               />
             </div>
@@ -288,7 +288,7 @@ const AddInventoryDialog = () => {
 
           {/* Row 8: Supplier */}
           <div>
-            <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier *</Label>
+            <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier</Label>
             <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
               <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select supplier" />

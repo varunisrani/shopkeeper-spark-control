@@ -32,12 +32,12 @@ export interface NewInventoryItem {
   variant: string;
   color?: string;
   imei: string;
-  purchase_price: number;
-  sale_price: number;
+  purchase_price: string | number;
+  sale_price: string | number;
   condition: string;
-  battery_health: number;
-  warranty_months?: number;
-  quantity?: number;
+  battery_health: string | number;
+  warranty_months?: string | number;
+  quantity?: string | number;
   venue?: string;
   inward_by?: string;
   additional_notes?: string;
@@ -86,16 +86,16 @@ export const useAddInventory = () => {
           variant: newItem.variant,
           color: newItem.color,
           imei: newItem.imei,
-          purchase_price: newItem.purchase_price,
-          sale_price: newItem.sale_price,
+          purchase_price: typeof newItem.purchase_price === 'string' ? parseFloat(newItem.purchase_price) || 0 : newItem.purchase_price,
+          sale_price: typeof newItem.sale_price === 'string' ? parseFloat(newItem.sale_price) || 0 : newItem.sale_price,
           condition: newItem.condition,
-          battery_health: newItem.battery_health,
-          warranty_months: newItem.warranty_months,
-          quantity: newItem.quantity,
+          battery_health: typeof newItem.battery_health === 'string' ? parseInt(newItem.battery_health) || 100 : newItem.battery_health,
+          warranty_months: typeof newItem.warranty_months === 'string' ? parseInt(newItem.warranty_months) || 0 : newItem.warranty_months,
+          quantity: typeof newItem.quantity === 'string' ? parseInt(newItem.quantity) || 1 : newItem.quantity,
           venue: newItem.venue,
           inward_by: newItem.inward_by,
           additional_notes: newItem.additional_notes,
-          supplier_id: newItem.supplier_id,
+          supplier_id: newItem.supplier_id || null,
           purchase_date: newItem.purchase_date,
           status: 'In Stock'
         }])
