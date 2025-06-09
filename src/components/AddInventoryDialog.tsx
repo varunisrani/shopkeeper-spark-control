@@ -38,9 +38,19 @@ const AddInventoryDialog = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted with data:', formData);
+    
+    // Validate required fields
+    if (!formData.brand || !formData.model || !formData.imei || !formData.supplier_id) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
     addInventoryMutation.mutate(formData, {
       onSuccess: () => {
+        console.log('Inventory item added successfully, closing dialog');
         setOpen(false);
+        // Reset form
         setFormData({
           brand: '',
           model: '',
@@ -64,6 +74,7 @@ const AddInventoryDialog = () => {
   };
 
   const handleInputChange = (field: keyof NewInventoryItem, value: string | number) => {
+    console.log(`Updating ${field}:`, value);
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -88,7 +99,7 @@ const AddInventoryDialog = () => {
           {/* Row 1: Brand and Model */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand</Label>
+              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand *</Label>
               <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select brand" />
@@ -103,7 +114,7 @@ const AddInventoryDialog = () => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="model" className="text-sm font-medium text-gray-700">Model</Label>
+              <Label htmlFor="model" className="text-sm font-medium text-gray-700">Model *</Label>
               <Input
                 id="model"
                 value={formData.model}
@@ -142,7 +153,7 @@ const AddInventoryDialog = () => {
           {/* Row 3: IMEI and Condition */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="imei" className="text-sm font-medium text-gray-700">IMEI/Serial Number</Label>
+              <Label htmlFor="imei" className="text-sm font-medium text-gray-700">IMEI/Serial Number *</Label>
               <Input
                 id="imei"
                 value={formData.imei}
@@ -168,10 +179,10 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 4: Purchase Price and Battery Health */}
+          {/* Row 4: Purchase Price and Sale Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹)</Label>
+              <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹) *</Label>
               <Input
                 id="purchase_price"
                 type="number"
@@ -182,6 +193,22 @@ const AddInventoryDialog = () => {
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price (₹) *</Label>
+              <Input
+                id="sale_price"
+                type="number"
+                value={formData.sale_price}
+                onChange={(e) => handleInputChange('sale_price', parseFloat(e.target.value) || 0)}
+                placeholder="0"
+                required
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Row 5: Battery Health and Warranty */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="battery_health" className="text-sm font-medium text-gray-700">Battery Health (%)</Label>
               <Input
@@ -195,10 +222,6 @@ const AddInventoryDialog = () => {
                 className="mt-1"
               />
             </div>
-          </div>
-
-          {/* Row 5: Warranty and Date of Purchase */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="warranty_months" className="text-sm font-medium text-gray-700">Warranty (months)</Label>
               <Input
@@ -210,8 +233,24 @@ const AddInventoryDialog = () => {
                 className="mt-1"
               />
             </div>
+          </div>
+
+          {/* Row 6: Quantity and Purchase Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase</Label>
+              <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={formData.quantity}
+                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
+                placeholder="1"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase *</Label>
               <Input
                 id="purchase_date"
                 type="date"
@@ -223,17 +262,15 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 6: Quantity and Inward By */}
+          {/* Row 7: Venue and Inward By */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">Quantity</Label>
+              <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
               <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 1)}
-                placeholder="1"
+                id="venue"
+                value={formData.venue}
+                onChange={(e) => handleInputChange('venue', e.target.value)}
+                placeholder="Store location"
                 className="mt-1"
               />
             </div>
@@ -249,19 +286,24 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 7: Venue */}
+          {/* Row 8: Supplier */}
           <div>
-            <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
-            <Input
-              id="venue"
-              value={formData.venue}
-              onChange={(e) => handleInputChange('venue', e.target.value)}
-              placeholder="Store location"
-              className="mt-1"
-            />
+            <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier *</Label>
+            <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select supplier" />
+              </SelectTrigger>
+              <SelectContent>
+                {suppliers?.map((supplier) => (
+                  <SelectItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Row 8: Additional Notes */}
+          {/* Row 9: Additional Notes */}
           <div>
             <Label htmlFor="additional_notes" className="text-sm font-medium text-gray-700">Additional Notes (Optional)</Label>
             <Textarea

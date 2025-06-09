@@ -721,55 +721,73 @@ export type Database = {
       }
       inventory: {
         Row: {
+          additional_notes: string | null
           battery_health: number | null
           brand: string
+          color: string | null
           condition: string
           created_at: string
           id: string
           imei: string
+          inward_by: string | null
           model: string
           purchase_date: string
           purchase_price: number
+          quantity: number | null
           sale_price: number
           sold_date: string | null
           status: string
           supplier_id: string | null
           updated_at: string
           variant: string | null
+          venue: string | null
+          warranty_months: number | null
         }
         Insert: {
+          additional_notes?: string | null
           battery_health?: number | null
           brand: string
+          color?: string | null
           condition?: string
           created_at?: string
           id?: string
           imei: string
+          inward_by?: string | null
           model: string
           purchase_date: string
           purchase_price: number
+          quantity?: number | null
           sale_price: number
           sold_date?: string | null
           status?: string
           supplier_id?: string | null
           updated_at?: string
           variant?: string | null
+          venue?: string | null
+          warranty_months?: number | null
         }
         Update: {
+          additional_notes?: string | null
           battery_health?: number | null
           brand?: string
+          color?: string | null
           condition?: string
           created_at?: string
           id?: string
           imei?: string
+          inward_by?: string | null
           model?: string
           purchase_date?: string
           purchase_price?: number
+          quantity?: number | null
           sale_price?: number
           sold_date?: string | null
           status?: string
           supplier_id?: string | null
           updated_at?: string
           variant?: string | null
+          venue?: string | null
+          warranty_months?: number | null
         }
         Relationships: [
           {
