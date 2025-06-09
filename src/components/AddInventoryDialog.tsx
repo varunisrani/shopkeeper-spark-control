@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
 import { useSuppliers } from '@/hooks/useSuppliers';
+import { toast } from 'sonner';
 
 const AddInventoryDialog = () => {
   const [open, setOpen] = useState(false);
