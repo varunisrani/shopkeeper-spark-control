@@ -1,14 +1,15 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Download, Eye, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useInvoices } from '@/hooks/useInvoices';
+import { useInvoiceOperations } from '@/hooks/useInvoiceOperations';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Invoices = () => {
   const { data: invoices, isLoading } = useInvoices();
+  const { viewInvoice, downloadInvoice } = useInvoiceOperations();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -101,12 +102,22 @@ const Invoices = () => {
                     <div className="text-xl sm:text-2xl font-bold text-slate-900">{invoice.amount}</div>
                   </div>
                   <div className="flex space-x-2 w-full sm:w-auto">
-                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none hover:bg-slate-50 border-slate-300 text-xs sm:text-sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 sm:flex-none hover:bg-slate-50 border-slate-300 text-xs sm:text-sm"
+                      onClick={() => viewInvoice(invoice.id)}
+                    >
                       <Eye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">View</span>
                       <span className="sm:hidden">View</span>
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 sm:flex-none hover:bg-slate-50 border-slate-300 text-xs sm:text-sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 sm:flex-none hover:bg-slate-50 border-slate-300 text-xs sm:text-sm"
+                      onClick={() => downloadInvoice(invoice.id)}
+                    >
                       <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       <span className="hidden sm:inline">Download</span>
                       <span className="sm:hidden">DL</span>
