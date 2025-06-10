@@ -84,7 +84,7 @@ const RecordSaleDialog = () => {
 
       if (inventoryError) throw inventoryError;
 
-      const finalAmount = parseFloat(saleData.sale_price || inventoryItem.sale_price.toString()) - parseFloat(saleData.discount || '0');
+      const finalAmount = parseFloat(saleData.sale_price || '0') - parseFloat(saleData.discount || '0');
       const saleId = `SALE-${Date.now()}`;
 
       // Create sale record
@@ -94,7 +94,7 @@ const RecordSaleDialog = () => {
           sale_id: saleId,
           customer_id: customerId,
           inventory_id: saleData.inventory_id,
-          sale_price: parseFloat(saleData.sale_price || inventoryItem.sale_price.toString()),
+          sale_price: parseFloat(saleData.sale_price || '0'),
           discount: parseFloat(saleData.discount || '0'),
           final_amount: finalAmount,
           payment_method: saleData.payment_method,
@@ -147,7 +147,7 @@ const RecordSaleDialog = () => {
           invoice_id: `INV-${Date.now()}`,
           sale_id: sale.id,
           customer_id: customerId,
-          subtotal: parseFloat(saleData.sale_price || inventoryItem.sale_price.toString()),
+          subtotal: parseFloat(saleData.sale_price || '0'),
           discount: parseFloat(saleData.discount || '0'),
           total_amount: finalAmount,
         });
@@ -216,7 +216,7 @@ const RecordSaleDialog = () => {
           color: item.color || '',
           imei: item.imei,
           purchase_price: item.purchase_price.toString(),
-          sale_price: item.sale_price.toString(),
+          sale_price: item.sale_price ? item.sale_price.toString() : '',
           condition: item.condition,
           battery_health: item.battery_health?.toString() || '',
           warranty_months: item.warranty_months?.toString() || '',
@@ -564,7 +564,7 @@ const RecordSaleDialog = () => {
               <div className="flex justify-between items-center">
                 <span className="font-medium">Final Amount:</span>
                 <span className="text-2xl font-bold text-emerald-600">
-                  ₹{(parseFloat(formData.sale_price || selectedItem.sale_price.toString()) - parseFloat(formData.discount || '0')).toLocaleString('en-IN')}
+                  ₹{(parseFloat(formData.sale_price || '0') - parseFloat(formData.discount || '0')).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -576,7 +576,7 @@ const RecordSaleDialog = () => {
           </Button>
           <Button 
             onClick={() => recordSaleMutation.mutate(formData)}
-            disabled={!formData.customer_name || !formData.customer_phone || !formData.inventory_id || recordSaleMutation.isPending}
+            disabled={!formData.inventory_id || recordSaleMutation.isPending}
             className="bg-emerald-600 hover:bg-emerald-700"
           >
             {recordSaleMutation.isPending ? 'Recording...' : 'Record Sale'}

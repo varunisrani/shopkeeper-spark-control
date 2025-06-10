@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ const AddInventoryDialog = () => {
     color: '',
     imei: '',
     purchase_price: '',
-    sale_price: '',
+    sale_price: '', // Keep in interface but don't show in form
     condition: 'New',
     battery_health: '',
     warranty_months: '',
@@ -52,7 +51,7 @@ const AddInventoryDialog = () => {
     const submitData = {
       ...formData,
       purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price.toString()) : 0,
-      sale_price: formData.sale_price ? parseFloat(formData.sale_price.toString()) : 0,
+      sale_price: 0, // Set to 0 for inventory items
       battery_health: formData.battery_health ? parseInt(formData.battery_health.toString()) : 100,
       warranty_months: formData.warranty_months ? parseInt(formData.warranty_months.toString()) : 0,
       quantity: formData.quantity ? parseInt(formData.quantity.toString()) : 1,
@@ -204,7 +203,7 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 4: Purchase Price and Sale Price */}
+          {/* Row 4: Purchase Price Only (Sale Price Removed) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹)</Label>
@@ -218,13 +217,12 @@ const AddInventoryDialog = () => {
               />
             </div>
             <div>
-              <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price (₹)</Label>
+              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase</Label>
               <Input
-                id="sale_price"
-                type="number"
-                value={formData.sale_price}
-                onChange={(e) => handleInputChange('sale_price', e.target.value)}
-                placeholder=""
+                id="purchase_date"
+                type="date"
+                value={formData.purchase_date}
+                onChange={(e) => handleInputChange('purchase_date', e.target.value)}
                 className="mt-1"
               />
             </div>
@@ -258,7 +256,7 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 6: Quantity and Purchase Date */}
+          {/* Row 6: Quantity and Venue */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">Quantity</Label>
@@ -273,85 +271,6 @@ const AddInventoryDialog = () => {
               />
             </div>
             <div>
-              <Label htmlFor="purchase_date" className="text-sm font-medium text-gray-700">Date of Purchase</Label>
-              <Input
-                id="purchase_date"
-                type="date"
-                value={formData.purchase_date}
-                onChange={(e) => handleInputChange('purchase_date', e.target.value)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Row 7: Sale Date and Customer Name */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="sale_date" className="text-sm font-medium text-gray-700">Sale Date</Label>
-              <Input
-                id="sale_date"
-                type="date"
-                value={formData.sale_date}
-                onChange={(e) => handleInputChange('sale_date', e.target.value)}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="customer_name" className="text-sm font-medium text-gray-700">Customer Name</Label>
-              <Input
-                id="customer_name"
-                value={formData.customer_name}
-                onChange={(e) => handleInputChange('customer_name', e.target.value)}
-                placeholder="Enter customer name"
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Row 8: Customer Phone and Payment Method */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="customer_phone" className="text-sm font-medium text-gray-700">Customer Phone</Label>
-              <Input
-                id="customer_phone"
-                value={formData.customer_phone}
-                onChange={(e) => handleInputChange('customer_phone', e.target.value)}
-                placeholder="Enter phone number"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="payment_method" className="text-sm font-medium text-gray-700">Payment Method</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
-                  <SelectItem value="UPI">UPI</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Row 9: Customer Address */}
-          <div>
-            <Label htmlFor="customer_address" className="text-sm font-medium text-gray-700">Customer Address</Label>
-            <Textarea
-              id="customer_address"
-              value={formData.customer_address}
-              onChange={(e) => handleInputChange('customer_address', e.target.value)}
-              placeholder="Enter customer address"
-              rows={2}
-              className="mt-1"
-            />
-          </div>
-
-          {/* Row 10: Venue and Inward By */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
               <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
               <Input
                 id="venue"
@@ -361,6 +280,10 @@ const AddInventoryDialog = () => {
                 className="mt-1"
               />
             </div>
+          </div>
+
+          {/* Row 7: Inward By and Supplier */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="inward_by" className="text-sm font-medium text-gray-700">Inward By</Label>
               <Input
@@ -371,38 +294,24 @@ const AddInventoryDialog = () => {
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier</Label>
+              <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select supplier" />
+                </SelectTrigger>
+                <SelectContent>
+                  {suppliers?.map((supplier) => (
+                    <SelectItem key={supplier.id} value={supplier.id}>
+                      {supplier.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Row 11: Supplier */}
-          <div>
-            <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier</Label>
-            <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select supplier" />
-              </SelectTrigger>
-              <SelectContent>
-                {suppliers?.map((supplier) => (
-                  <SelectItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Row 12: Exchange Old Phone */}
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="exchange_old_phone"
-              checked={formData.exchange_old_phone}
-              onCheckedChange={(checked) => handleCheckboxChange('exchange_old_phone', checked as boolean)}
-            />
-            <Label htmlFor="exchange_old_phone" className="text-sm font-medium text-gray-700">
-              Exchange Old Phone
-            </Label>
-          </div>
-
-          {/* Row 13: Additional Notes */}
+          {/* Row 8: Additional Notes */}
           <div>
             <Label htmlFor="additional_notes" className="text-sm font-medium text-gray-700">Additional Notes</Label>
             <Textarea
@@ -410,19 +319,6 @@ const AddInventoryDialog = () => {
               value={formData.additional_notes}
               onChange={(e) => handleInputChange('additional_notes', e.target.value)}
               placeholder="Any additional information about this product"
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-
-          {/* Row 14: Additional Sale Notes */}
-          <div>
-            <Label htmlFor="additional_sale_notes" className="text-sm font-medium text-gray-700">Additional Sale Notes</Label>
-            <Textarea
-              id="additional_sale_notes"
-              value={formData.additional_sale_notes}
-              onChange={(e) => handleInputChange('additional_sale_notes', e.target.value)}
-              placeholder="Any additional sale-related information"
               rows={3}
               className="mt-1"
             />
