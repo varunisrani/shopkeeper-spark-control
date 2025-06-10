@@ -224,7 +224,7 @@ const RecordSaleDialog = () => {
           purchase_date: item.purchase_date,
           venue: item.venue || '',
           inward_by: item.inward_by || '',
-          supplier_id: item.supplier_id || '',
+          supplier_id: '',
           additional_notes: item.additional_notes || '',
         }));
       }
