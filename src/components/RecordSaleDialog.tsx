@@ -1,90 +1,126 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 import { useInventory } from '@/hooks/useInventory';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Calculator } from 'lucide-react';
 
 const RecordSaleDialog = () => {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    brand: '',
-    model: '',
-    variant: '',
-    color: '',
-    imei: '',
-    purchase_price: '',
-    sale_price: '',
-    condition: 'New',
-    battery_health: '',
-    warranty_months: '',
-    quantity: '',
-    purchase_date: new Date().toISOString().split('T')[0],
-    sale_date: new Date().toISOString().split('T')[0],
-    customer_name: '',
-    customer_phone: '',
-    customer_address: '',
-    payment_method: 'Cash',
-    exchange_old_phone: false,
-    additional_notes: '',
-    additional_sale_notes: '',
-    venue: '',
-    inward_by: '',
-    supplier_id: '',
-    inventory_id: '',
-    discount: '',
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState('');
+  const [salePrice, setSalePrice] = useState('');
+  const [saleDate, setSaleDate] = useState('');
+  const [hasExchange, setHasExchange] = useState(false);
+  const [exchangeModel, setExchangeModel] = useState('');
+  const [exchangeValue, setExchangeValue] = useState('0');
+  const [totalAmount, setTotalAmount] = useState('0');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [exchangeCondition, setExchangeCondition] = useState('');
+  const [exchangeBatteryHealth, setExchangeBatteryHealth] = useState('');
+  const [exchangeImei, setExchangeImei] = useState('');
+  const [notes, setNotes] = useState('');
 
   const { data: inventory } = useInventory();
   const queryClient = useQueryClient();
 
   const availableInventory = inventory?.filter(item => item.status === 'In Stock') || [];
 
+  // Set today's date as default
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSaleDate(today);
+  }, []);
+
+  // Calculate total amount
+  useEffect(() => {
+    if (salePrice) {
+      const sale = parseFloat(salePrice) || 0;
+      const exchange = hasExchange ? (parseFloat(exchangeValue) || 0) : 0;
+      setTotalAmount((sale - exchange).toFixed(0));
+    } else {
+      setTotalAmount('0');
+    }
+  }, [salePrice, hasExchange, exchangeValue]);
+
+  // Find the selected inventory item
+  const selectedItem = availableInventory.find(item => item.id === selectedInventory);
+
+  // Handle inventory selection
+  const handleInventoryChange = (value: string) => {
+    setSelectedInventory(value);
+    const item = availableInventory.find(item => item.id === value);
+    if (item) {
+      setSalePrice(item.sale_price.toString());
+    } else {
+      setSalePrice('');
+    }
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const recordSaleMutation = useMutation({
-    mutationFn: async (saleData: typeof formData) => {
+    mutationFn: async () => {
+      if (!selectedInventory) {
+        throw new Error('Please select a device from inventory');
+      }
+
       // First, create or find customer
       let customerId;
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('phone', saleData.customer_phone)
-        .single();
-
-      if (existingCustomer) {
-        customerId = existingCustomer.id;
-      } else {
-        const { data: newCustomer, error: customerError } = await supabase
+      if (customerPhone) {
+        const { data: existingCustomer } = await supabase
           .from('customers')
-          .insert({
-            name: saleData.customer_name,
-            phone: saleData.customer_phone,
-            address: saleData.customer_address,
-          })
           .select('id')
+          .eq('phone', customerPhone)
           .single();
 
-        if (customerError) throw customerError;
-        customerId = newCustomer.id;
+        if (existingCustomer) {
+          customerId = existingCustomer.id;
+        } else {
+          const { data: newCustomer, error: customerError } = await supabase
+            .from('customers')
+            .insert({
+              name: customerName || 'Unknown Customer',
+              phone: customerPhone,
+              address: customerAddress,
+            })
+            .select('id')
+            .single();
+
+          if (customerError) throw customerError;
+          customerId = newCustomer.id;
+        }
       }
 
       // Get inventory item details
       const { data: inventoryItem, error: inventoryError } = await supabase
         .from('inventory')
         .select('*')
-        .eq('id', saleData.inventory_id)
+        .eq('id', selectedInventory)
         .single();
 
       if (inventoryError) throw inventoryError;
 
-      const finalAmount = parseFloat(saleData.sale_price || '0') - parseFloat(saleData.discount || '0');
+      const finalAmount = parseFloat(salePrice || '0') - (hasExchange ? parseFloat(exchangeValue || '0') : 0);
       const saleId = `SALE-${Date.now()}`;
 
       // Create sale record
@@ -93,15 +129,16 @@ const RecordSaleDialog = () => {
         .insert({
           sale_id: saleId,
           customer_id: customerId,
-          inventory_id: saleData.inventory_id,
-          sale_price: parseFloat(saleData.sale_price || '0'),
-          discount: parseFloat(saleData.discount || '0'),
+          inventory_id: selectedInventory,
+          sale_price: parseFloat(salePrice || '0'),
+          discount: hasExchange ? parseFloat(exchangeValue || '0') : 0,
           final_amount: finalAmount,
-          payment_method: saleData.payment_method,
-          customer_address: saleData.customer_address,
-          exchange_old_phone: saleData.exchange_old_phone,
-          additional_sale_notes: saleData.additional_sale_notes,
-          imei_serial: saleData.imei,
+          payment_method: paymentMethod,
+          customer_address: customerAddress,
+          exchange_old_phone: hasExchange,
+          additional_sale_notes: notes,
+          imei_serial: inventoryItem.imei,
+          sale_date: saleDate + 'T00:00:00.000Z',
         })
         .select()
         .single();
@@ -113,16 +150,16 @@ const RecordSaleDialog = () => {
         .from('inventory')
         .update({ 
           status: 'Sold',
-          sold_date: saleData.sale_date,
-          sale_date: saleData.sale_date,
-          customer_name: saleData.customer_name,
-          customer_phone: saleData.customer_phone,
-          customer_address: saleData.customer_address,
-          payment_method: saleData.payment_method,
-          exchange_old_phone: saleData.exchange_old_phone,
-          additional_sale_notes: saleData.additional_sale_notes,
+          sold_date: saleDate,
+          sale_date: saleDate,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_address: customerAddress,
+          payment_method: paymentMethod,
+          exchange_old_phone: hasExchange,
+          additional_sale_notes: notes,
         })
-        .eq('id', saleData.inventory_id);
+        .eq('id', selectedInventory);
 
       if (updateError) throw updateError;
 
@@ -132,7 +169,7 @@ const RecordSaleDialog = () => {
         .insert({
           transaction_id: `TXN-${Date.now()}`,
           type: 'Sale',
-          inventory_id: saleData.inventory_id,
+          inventory_id: selectedInventory,
           customer_id: customerId,
           amount: finalAmount,
           quantity: 1,
@@ -141,18 +178,20 @@ const RecordSaleDialog = () => {
       if (transactionError) throw transactionError;
 
       // Create invoice
-      const { error: invoiceError } = await supabase
-        .from('invoices')
-        .insert({
-          invoice_id: `INV-${Date.now()}`,
-          sale_id: sale.id,
-          customer_id: customerId,
-          subtotal: parseFloat(saleData.sale_price || '0'),
-          discount: parseFloat(saleData.discount || '0'),
-          total_amount: finalAmount,
-        });
+      if (customerId) {
+        const { error: invoiceError } = await supabase
+          .from('invoices')
+          .insert({
+            invoice_id: `INV-${Date.now()}`,
+            sale_id: sale.id,
+            customer_id: customerId,
+            subtotal: parseFloat(salePrice || '0'),
+            discount: hasExchange ? parseFloat(exchangeValue || '0') : 0,
+            total_amount: finalAmount,
+          });
 
-      if (invoiceError) throw invoiceError;
+        if (invoiceError) throw invoiceError;
+      }
 
       return sale;
     },
@@ -165,33 +204,7 @@ const RecordSaleDialog = () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
       toast.success('Sale recorded successfully!');
       setOpen(false);
-      setFormData({
-        brand: '',
-        model: '',
-        variant: '',
-        color: '',
-        imei: '',
-        purchase_price: '',
-        sale_price: '',
-        condition: 'New',
-        battery_health: '',
-        warranty_months: '',
-        quantity: '',
-        purchase_date: new Date().toISOString().split('T')[0],
-        sale_date: new Date().toISOString().split('T')[0],
-        customer_name: '',
-        customer_phone: '',
-        customer_address: '',
-        payment_method: 'Cash',
-        exchange_old_phone: false,
-        additional_notes: '',
-        additional_sale_notes: '',
-        venue: '',
-        inward_by: '',
-        supplier_id: '',
-        inventory_id: '',
-        discount: '',
-      });
+      resetForm();
     },
     onError: (error) => {
       console.error('Error recording sale:', error);
@@ -199,40 +212,29 @@ const RecordSaleDialog = () => {
     },
   });
 
-  const selectedItem = availableInventory.find(item => item.id === formData.inventory_id);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Auto-fill fields when inventory item is selected
-    if (field === 'inventory_id' && value) {
-      const item = availableInventory.find(inv => inv.id === value);
-      if (item) {
-        setFormData(prev => ({
-          ...prev,
-          brand: item.brand,
-          model: item.model,
-          variant: item.variant || '',
-          color: item.color || '',
-          imei: item.imei,
-          purchase_price: item.purchase_price.toString(),
-          sale_price: item.sale_price ? item.sale_price.toString() : '',
-          condition: item.condition,
-          battery_health: item.battery_health?.toString() || '',
-          warranty_months: item.warranty_months?.toString() || '',
-          quantity: item.quantity?.toString() || '1',
-          purchase_date: item.purchase_date,
-          venue: item.venue || '',
-          inward_by: item.inward_by || '',
-          supplier_id: '',
-          additional_notes: item.additional_notes || '',
-        }));
-      }
-    }
+  const resetForm = () => {
+    setSelectedInventory('');
+    setSalePrice('');
+    setSaleDate(new Date().toISOString().split('T')[0]);
+    setHasExchange(false);
+    setExchangeModel('');
+    setExchangeValue('0');
+    setTotalAmount('0');
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerAddress('');
+    setPaymentMethod('Cash');
+    setExchangeCondition('');
+    setExchangeBatteryHealth('');
+    setExchangeImei('');
+    setNotes('');
   };
 
-  const handleCheckboxChange = (field: string, checked: boolean) => {
-    setFormData(prev => ({ ...prev, [field]: checked }));
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    recordSaleMutation.mutate();
+    setIsLoading(false);
   };
 
   return (
@@ -247,341 +249,279 @@ const RecordSaleDialog = () => {
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900">Record New Sale</DialogTitle>
           <DialogDescription>
-            Record a new sale and generate invoice automatically
+            Select a specific device from inventory to record the sale and generate invoice automatically.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 py-4">
-          {/* Select Device First */}
-          <div>
-            <Label htmlFor="inventory" className="text-sm font-medium">Select Device</Label>
-            <Select value={formData.inventory_id} onValueChange={(value) => handleInputChange('inventory_id', value)}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select a device to sell" />
+        
+        <form onSubmit={handleSubmit} className="space-y-6 py-4">
+          {/* IMEI/Serial Display */}
+          <div className="space-y-2">
+            <Label htmlFor="imei-serial">IMEI/Serial Number</Label>
+            <div className="p-3 bg-gray-50 rounded-md border">
+              {selectedInventory ? (
+                <div className="text-sm space-y-1">
+                  <div>
+                    <span className="font-medium">IMEI/Serial:</span> {selectedItem?.imei}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  Select a device below to view its IMEI/Serial number
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Device Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="inventory">Select Device from Inventory</Label>
+            <Select value={selectedInventory} onValueChange={handleInventoryChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select device" />
               </SelectTrigger>
               <SelectContent>
                 {availableInventory.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
-                    {item.brand} {item.model} {item.variant} - ₹{parseFloat(item.sale_price.toString()).toLocaleString('en-IN')}
+                    {item.brand} {item.model} {item.variant} - {item.color}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {selectedItem && (
+              <div className="p-3 bg-gray-50 rounded-md border">
+                <div className="text-sm space-y-1">
+                  <div>
+                    <span className="font-medium">Device:</span> {selectedItem.brand} {selectedItem.model}
+                  </div>
+                  <div>
+                    <span className="font-medium">Variant:</span> {selectedItem.variant}, {selectedItem.color}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Row 1: Brand and Model */}
+          {/* Sale Price and Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand</Label>
+            <div className="space-y-2">
+              <Label htmlFor="sale-price">Sale Price (₹)</Label>
               <Input
-                id="brand"
-                value={formData.brand}
-                onChange={(e) => handleInputChange('brand', e.target.value)}
-                placeholder="Brand"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-            <div>
-              <Label htmlFor="model" className="text-sm font-medium text-gray-700">Model</Label>
-              <Input
-                id="model"
-                value={formData.model}
-                onChange={(e) => handleInputChange('model', e.target.value)}
-                placeholder="Model"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Variant and Color */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="variant" className="text-sm font-medium text-gray-700">Variant</Label>
-              <Input
-                id="variant"
-                value={formData.variant}
-                onChange={(e) => handleInputChange('variant', e.target.value)}
-                placeholder="Variant"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-            <div>
-              <Label htmlFor="color" className="text-sm font-medium text-gray-700">Color</Label>
-              <Input
-                id="color"
-                value={formData.color}
-                onChange={(e) => handleInputChange('color', e.target.value)}
-                placeholder="Color"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-          </div>
-
-          {/* Row 3: IMEI and Condition */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="imei" className="text-sm font-medium text-gray-700">IMEI/Serial Number</Label>
-              <Input
-                id="imei"
-                value={formData.imei}
-                onChange={(e) => handleInputChange('imei', e.target.value)}
-                placeholder="IMEI"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-            <div>
-              <Label htmlFor="condition" className="text-sm font-medium text-gray-700">Condition</Label>
-              <Input
-                id="condition"
-                value={formData.condition}
-                onChange={(e) => handleInputChange('condition', e.target.value)}
-                placeholder="Condition"
-                className="mt-1"
-                readOnly
-              />
-            </div>
-          </div>
-
-          {/* Row 4: Purchase Price and Sale Price */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹)</Label>
-              <Input
-                id="purchase_price"
+                id="sale-price"
                 type="number"
-                value={formData.purchase_price}
-                onChange={(e) => handleInputChange('purchase_price', e.target.value)}
-                placeholder=""
-                className="mt-1"
-                readOnly
+                min="0"
+                value={salePrice}
+                onChange={(e) => setSalePrice(e.target.value)}
+                placeholder="Enter sale price"
               />
             </div>
-            <div>
-              <Label htmlFor="sale_price" className="text-sm font-medium text-gray-700">Sale Price (₹)</Label>
+            <div className="space-y-2">
+              <Label htmlFor="sale-date">Date of Sale</Label>
               <Input
-                id="sale_price"
-                type="number"
-                value={formData.sale_price}
-                onChange={(e) => handleInputChange('sale_price', e.target.value)}
-                placeholder=""
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Row 5: Battery Health and Warranty */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="battery_health" className="text-sm font-medium text-gray-700">Battery Health (%)</Label>
-              <Input
-                id="battery_health"
-                type="number"
-                value={formData.battery_health}
-                onChange={(e) => handleInputChange('battery_health', e.target.value)}
-                placeholder=""
-                className="mt-1"
-                readOnly
-              />
-            </div>
-            <div>
-              <Label htmlFor="warranty_months" className="text-sm font-medium text-gray-700">Warranty (months)</Label>
-              <Input
-                id="warranty_months"
-                type="number"
-                value={formData.warranty_months}
-                onChange={(e) => handleInputChange('warranty_months', e.target.value)}
-                placeholder=""
-                className="mt-1"
-                readOnly
-              />
-            </div>
-          </div>
-
-          {/* Row 6: Quantity and Sale Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', e.target.value)}
-                placeholder=""
-                className="mt-1"
-                readOnly
-              />
-            </div>
-            <div>
-              <Label htmlFor="sale_date" className="text-sm font-medium text-gray-700">Sale Date</Label>
-              <Input
-                id="sale_date"
+                id="sale-date"
                 type="date"
-                value={formData.sale_date}
-                onChange={(e) => handleInputChange('sale_date', e.target.value)}
-                className="mt-1"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Row 7: Customer Name and Customer Phone */}
+          {/* Payment Method and Customer Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="customer_name" className="text-sm font-medium text-gray-700">Customer Name</Label>
-              <Input
-                id="customer_name"
-                value={formData.customer_name}
-                onChange={(e) => handleInputChange('customer_name', e.target.value)}
-                placeholder="Enter customer name"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label htmlFor="customer_phone" className="text-sm font-medium text-gray-700">Customer Phone</Label>
-              <Input
-                id="customer_phone"
-                value={formData.customer_phone}
-                onChange={(e) => handleInputChange('customer_phone', e.target.value)}
-                placeholder="Enter phone number"
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Row 8: Payment Method and Discount */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="payment_method" className="text-sm font-medium text-gray-700">Payment Method</Label>
-              <Select value={formData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
+            <div className="space-y-2">
+              <Label htmlFor="payment-method">Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select method" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
+                  <SelectItem value="Card">Credit Card</SelectItem>
                   <SelectItem value="UPI">UPI</SelectItem>
                   <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label htmlFor="discount" className="text-sm font-medium text-gray-700">Discount Amount</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customer-name">Customer Name</Label>
               <Input
-                id="discount"
-                type="number"
-                value={formData.discount}
-                onChange={(e) => handleInputChange('discount', e.target.value)}
-                placeholder=""
-                min="0"
-                className="mt-1"
+                id="customer-name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Enter customer name"
               />
             </div>
           </div>
 
-          {/* Row 9: Customer Address */}
-          <div>
-            <Label htmlFor="customer_address" className="text-sm font-medium text-gray-700">Customer Address</Label>
-            <Textarea
-              id="customer_address"
-              value={formData.customer_address}
-              onChange={(e) => handleInputChange('customer_address', e.target.value)}
-              placeholder="Enter customer address"
-              rows={2}
-              className="mt-1"
-            />
-          </div>
-
-          {/* Row 10: Venue and Inward By */}
+          {/* Customer Phone and Address */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customer-phone">Customer Phone</Label>
               <Input
-                id="venue"
-                value={formData.venue}
-                onChange={(e) => handleInputChange('venue', e.target.value)}
-                placeholder="Store location"
-                className="mt-1"
-                readOnly
+                id="customer-phone"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                placeholder="Enter customer phone number"
               />
             </div>
-            <div>
-              <Label htmlFor="inward_by" className="text-sm font-medium text-gray-700">Inward By</Label>
+            <div className="space-y-2">
+              <Label htmlFor="customer-address">Customer Address</Label>
               <Input
-                id="inward_by"
-                value={formData.inward_by}
-                onChange={(e) => handleInputChange('inward_by', e.target.value)}
-                placeholder="Name of receiver"
-                className="mt-1"
-                readOnly
+                id="customer-address"
+                value={customerAddress}
+                onChange={(e) => setCustomerAddress(e.target.value)}
+                placeholder="Enter customer address"
               />
             </div>
           </div>
 
-          {/* Row 11: Exchange Old Phone */}
+          <Separator />
+
+          {/* Exchange Toggle */}
           <div className="flex items-center space-x-2">
-            <Checkbox
-              id="exchange_old_phone"
-              checked={formData.exchange_old_phone}
-              onCheckedChange={(checked) => handleCheckboxChange('exchange_old_phone', checked as boolean)}
+            <Switch 
+              id="exchange" 
+              checked={hasExchange} 
+              onCheckedChange={setHasExchange} 
             />
-            <Label htmlFor="exchange_old_phone" className="text-sm font-medium text-gray-700">
+            <Label htmlFor="exchange" className="font-medium">
               Exchange Old Phone
             </Label>
           </div>
 
-          {/* Row 12: Additional Notes */}
-          <div>
-            <Label htmlFor="additional_notes" className="text-sm font-medium text-gray-700">Additional Notes</Label>
-            <Textarea
-              id="additional_notes"
-              value={formData.additional_notes}
-              onChange={(e) => handleInputChange('additional_notes', e.target.value)}
-              placeholder="Any additional information"
-              rows={3}
-              className="mt-1"
-              readOnly
-            />
-          </div>
+          {/* Exchange Details */}
+          {hasExchange && (
+            <div className="bg-gray-50 p-4 rounded-md border space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-model">Exchange Phone Model</Label>
+                  <Input
+                    id="exchange-model"
+                    value={exchangeModel}
+                    onChange={(e) => setExchangeModel(e.target.value)}
+                    placeholder="e.g. iPhone 11"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-value">Exchange Value (₹)</Label>
+                  <Input
+                    id="exchange-value"
+                    type="number"
+                    min="0"
+                    value={exchangeValue}
+                    onChange={(e) => setExchangeValue(e.target.value)}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
 
-          {/* Row 13: Additional Sale Notes */}
-          <div>
-            <Label htmlFor="additional_sale_notes" className="text-sm font-medium text-gray-700">Additional Sale Notes</Label>
-            <Textarea
-              id="additional_sale_notes"
-              value={formData.additional_sale_notes}
-              onChange={(e) => handleInputChange('additional_sale_notes', e.target.value)}
-              placeholder="Any additional sale-related information"
-              rows={3}
-              className="mt-1"
-            />
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-condition">Condition</Label>
+                  <Select value={exchangeCondition} onValueChange={setExchangeCondition}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select condition" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="like-new">Like New</SelectItem>
+                      <SelectItem value="excellent">Excellent</SelectItem>
+                      <SelectItem value="good">Good</SelectItem>
+                      <SelectItem value="fair">Fair</SelectItem>
+                      <SelectItem value="poor">Poor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-battery">Battery Health (%)</Label>
+                  <Input
+                    id="exchange-battery"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={exchangeBatteryHealth}
+                    onChange={(e) => setExchangeBatteryHealth(e.target.value)}
+                    placeholder="e.g. 85"
+                  />
+                </div>
+              </div>
 
-          {selectedItem && (
-            <div className="bg-gray-50 border rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Final Amount:</span>
-                <span className="text-2xl font-bold text-emerald-600">
-                  ₹{(parseFloat(formData.sale_price || '0') - parseFloat(formData.discount || '0')).toLocaleString('en-IN')}
-                </span>
+              <div className="space-y-2">
+                <Label htmlFor="exchange-imei">Exchange Phone IMEI/Serial</Label>
+                <Input 
+                  id="exchange-imei" 
+                  value={exchangeImei}
+                  onChange={(e) => setExchangeImei(e.target.value)}
+                  placeholder="Enter IMEI or Serial number" 
+                />
               </div>
             </div>
           )}
-        </div>
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={() => recordSaleMutation.mutate(formData)}
-            disabled={!formData.inventory_id || recordSaleMutation.isPending}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            {recordSaleMutation.isPending ? 'Recording...' : 'Record Sale'}
-          </Button>
-        </div>
+
+          {/* Additional Notes */}
+          <div className="space-y-2">
+            <Label htmlFor="notes">Additional Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any additional information about this sale"
+              rows={3}
+            />
+          </div>
+
+          {/* Sale Summary */}
+          {selectedInventory && salePrice && (
+            <div className="p-4 bg-emerald-50 rounded-md border border-emerald-200">
+              <div className="flex items-center mb-2">
+                <Calculator className="h-5 w-5 mr-2 text-emerald-600" />
+                <h3 className="font-medium text-lg text-emerald-800">Sale Summary</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>Device:</div>
+                <div className="font-medium">
+                  {selectedItem?.brand} {selectedItem?.model} ({selectedItem?.variant}, {selectedItem?.color})
+                </div>
+
+                <div>IMEI/Serial:</div>
+                <div className="font-medium font-mono">{selectedItem?.imei}</div>
+
+                <div>Sale Price:</div>
+                <div className="font-medium">{formatCurrency(parseFloat(salePrice))}</div>
+
+                {hasExchange && parseFloat(exchangeValue) > 0 && (
+                  <>
+                    <div>Exchange Value:</div>
+                    <div className="font-medium">-{formatCurrency(parseFloat(exchangeValue))}</div>
+                  </>
+                )}
+
+                <div className="text-base pt-2 font-bold text-emerald-800">Amount to Collect:</div>
+                <div className="text-base font-bold pt-2 text-emerald-600">
+                  {formatCurrency(parseInt(totalAmount))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-6 border-t">
+            <Button 
+              variant="outline" 
+              type="button" 
+              onClick={() => setOpen(false)} 
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading || recordSaleMutation.isPending || !selectedInventory} 
+              className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
+            >
+              {isLoading || recordSaleMutation.isPending ? 'Processing...' : 'Record Sale'}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
