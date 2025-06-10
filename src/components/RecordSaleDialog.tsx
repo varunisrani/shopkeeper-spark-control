@@ -272,7 +272,7 @@ const RecordSaleDialog = () => {
           </div>
 
           {/* Device Details and IMEI */}
-          {selectedItem && (
+            {selectedItem && (
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-4">
               <div className="text-sm space-y-2">
                 <div className="flex justify-between items-center">
@@ -283,17 +283,17 @@ const RecordSaleDialog = () => {
                 </div>
                 <div className="text-blue-900">
                   {selectedItem.brand} {selectedItem.model} - {selectedItem.variant}, {selectedItem.color}
-                </div>
+                  </div>
               </div>
               
               <div className="pt-2 border-t border-blue-200">
                 <div className="text-sm font-medium text-blue-800 mb-1">IMEI/Serial Number:</div>
                 <div className="font-mono text-lg bg-white px-3 py-2 rounded border border-blue-300 text-blue-900">
                   {selectedItem.imei}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Sale Price and Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
