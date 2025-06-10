@@ -23,7 +23,6 @@ const AddInventoryDialog = () => {
     condition: 'New',
     battery_health: '',
     warranty_months: '',
-    quantity: '',
     venue: '',
     inward_by: '',
     additional_notes: '',
@@ -53,7 +52,6 @@ const AddInventoryDialog = () => {
       sale_price: 0, // Set to 0 for inventory items
       battery_health: formData.battery_health ? parseInt(formData.battery_health.toString()) : 100,
       warranty_months: formData.warranty_months ? parseInt(formData.warranty_months.toString()) : 0,
-      quantity: formData.quantity ? parseInt(formData.quantity.toString()) : 1,
     };
 
     addInventoryMutation.mutate(submitData, {
@@ -72,7 +70,6 @@ const AddInventoryDialog = () => {
           condition: 'New',
           battery_health: '',
           warranty_months: '',
-          quantity: '',
           venue: '',
           inward_by: '',
           additional_notes: '',
@@ -87,9 +84,10 @@ const AddInventoryDialog = () => {
           additional_sale_notes: '',
         });
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         console.error('Error adding inventory:', error);
-        if (error?.code === '23505' && error?.details?.includes('imei')) {
+        const postgresError = error as unknown as { code?: string; details?: string };
+        if (postgresError?.code === '23505' && postgresError?.details?.includes('imei')) {
           toast.error(`IMEI ${formData.imei} already exists in inventory. Please use a different IMEI number.`);
         } else {
           toast.error('Failed to add inventory item. Please try again.');
@@ -263,20 +261,8 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 6: Quantity and Venue */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label htmlFor="quantity" className="text-sm font-medium text-gray-700">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                value={formData.quantity}
-                onChange={(e) => handleInputChange('quantity', e.target.value)}
-                placeholder=""
-                className="mt-1"
-              />
-            </div>
+          {/* Row 6: Venue */}
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
               <Input
