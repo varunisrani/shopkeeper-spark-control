@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShoppingCart, Calculator } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 const RecordSaleDialog = () => {
   const [open, setOpen] = useState(false);
@@ -254,24 +254,6 @@ const RecordSaleDialog = () => {
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          {/* IMEI/Serial Display */}
-          <div className="space-y-2">
-            <Label htmlFor="imei-serial">IMEI/Serial Number</Label>
-            <div className="p-3 bg-gray-50 rounded-md border">
-              {selectedInventory ? (
-                <div className="text-sm space-y-1">
-                  <div>
-                    <span className="font-medium">IMEI/Serial:</span> {selectedItem?.imei}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500">
-                  Select a device below to view its IMEI/Serial number
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Device Selection */}
           <div className="space-y-2">
             <Label htmlFor="inventory">Select Device from Inventory</Label>
@@ -287,19 +269,31 @@ const RecordSaleDialog = () => {
                 ))}
               </SelectContent>
             </Select>
-            {selectedItem && (
-              <div className="p-3 bg-gray-50 rounded-md border">
-                <div className="text-sm space-y-1">
-                  <div>
-                    <span className="font-medium">Device:</span> {selectedItem.brand} {selectedItem.model}
-                  </div>
-                  <div>
-                    <span className="font-medium">Variant:</span> {selectedItem.variant}, {selectedItem.color}
-                  </div>
+          </div>
+
+          {/* Device Details and IMEI */}
+          {selectedItem && (
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-4">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-blue-800">Device Details:</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {selectedItem.condition}
+                  </Badge>
+                </div>
+                <div className="text-blue-900">
+                  {selectedItem.brand} {selectedItem.model} - {selectedItem.variant}, {selectedItem.color}
                 </div>
               </div>
-            )}
-          </div>
+              
+              <div className="pt-2 border-t border-blue-200">
+                <div className="text-sm font-medium text-blue-800 mb-1">IMEI/Serial Number:</div>
+                <div className="font-mono text-lg bg-white px-3 py-2 rounded border border-blue-300 text-blue-900">
+                  {selectedItem.imei}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Sale Price and Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

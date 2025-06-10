@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
-import { useSuppliers } from '@/hooks/useSuppliers';
 import { toast } from 'sonner';
 
 const AddInventoryDialog = () => {
@@ -40,7 +38,6 @@ const AddInventoryDialog = () => {
     additional_sale_notes: '',
   });
 
-  const { data: suppliers } = useSuppliers();
   const addInventoryMutation = useAddInventory();
 
   const brands = ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Oppo', 'Vivo', 'Realme', 'Nothing', 'Google'];
@@ -292,8 +289,8 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 7: Inward By and Supplier */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Row 7: Inward By */}
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <Label htmlFor="inward_by" className="text-sm font-medium text-gray-700">Inward By</Label>
               <Input
@@ -303,21 +300,6 @@ const AddInventoryDialog = () => {
                 placeholder="Name of receiver"
                 className="mt-1"
               />
-            </div>
-            <div>
-              <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier</Label>
-              <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select supplier" />
-                </SelectTrigger>
-                <SelectContent>
-                  {suppliers?.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
