@@ -358,20 +358,4 @@ const AddInventoryDialog = () => {
   );
 };
 
-const handleInputChange = (field: keyof NewInventoryItem, value: string) => {
-  console.log(`Updating ${field}:`, value);
-  setFormData(prev => ({
-    ...prev,
-    [field]: value,
-  }));
-};
-
-const handleCheckboxChange = (field: keyof NewInventoryItem, checked: boolean) => {
-  console.log(`Updating ${field}:`, checked);
-  setFormData(prev => ({
-    ...prev,
-    [field]: checked,
-  }));
-};
-
 export default AddInventoryDialog;
