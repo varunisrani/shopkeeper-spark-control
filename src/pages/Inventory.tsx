@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -6,9 +5,29 @@ import { Search, Filter, Package } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
 import { Skeleton } from '@/components/ui/skeleton';
 import AddInventoryDialog from '@/components/AddInventoryDialog';
+import EditInventoryDialog from '@/components/EditInventoryDialog';
+import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const Inventory = () => {
   const { data: inventory, isLoading } = useInventory();
+  const queryClient = useQueryClient();
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from('inventory')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting inventory:', error);
+      throw error;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['inventory'] });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -104,60 +123,6 @@ const Inventory = () => {
           </div>
         </div>
 
-        {/* Mobile Card View */}
-        <div className="block lg:hidden space-y-4">
-          {inventory?.map((item) => {
-            const profit = parseFloat(item.sale_price.toString()) - parseFloat(item.purchase_price.toString());
-            const profitMargin = ((profit / parseFloat(item.purchase_price.toString())) * 100).toFixed(1);
-            
-            return (
-              <div key={item.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-bold text-slate-900">{item.brand}</h3>
-                    <p className="text-sm font-medium text-slate-700">{item.model}</p>
-                    <p className="text-xs text-slate-500">{item.variant}</p>
-                  </div>
-                  <Badge variant="secondary" className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-600">IMEI:</span>
-                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{item.imei}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-600">Purchase:</span>
-                    <span className="text-xs">₹{parseFloat(item.purchase_price.toString()).toLocaleString('en-IN')}</span>
-                  </div>
-                  
-                  <div className="flex justify-between">
-                    <span className="text-xs text-slate-600">Sale Price:</span>
-                    <span className="text-xs font-bold">₹{parseFloat(item.sale_price.toString()).toLocaleString('en-IN')}</span>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <Badge variant="secondary" className={getConditionColor(item.condition)}>
-                      {item.condition}
-                    </Badge>
-                    <div className="text-right">
-                      <div className="text-xs text-emerald-600 font-bold">
-                        Profit: ₹{profit.toLocaleString('en-IN')}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        Margin: {profitMargin}%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
         {/* Desktop Table View */}
         <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
@@ -182,7 +147,7 @@ const Inventory = () => {
                   <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Purchase Date
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -215,35 +180,39 @@ const Inventory = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <Badge variant="secondary" className={getConditionColor(item.condition)}>
-                            {item.condition}
-                          </Badge>
-                          <div className="text-xs text-slate-500">
-                            Battery: {item.battery_health}%
-                          </div>
-                        </div>
+                        <Badge variant="secondary" className={getConditionColor(item.condition)}>
+                          {item.condition}
+                        </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <Badge variant="secondary" className={getStatusColor(item.status)}>
                             {item.status}
                           </Badge>
-                          <div className="text-sm text-emerald-600 font-bold">
-                            Profit: ₹{profit.toLocaleString('en-IN')}
-                          </div>
-                          <div className="text-xs text-slate-500">
-                            Margin: {profitMargin}%
-                          </div>
+                          {item.status === 'Sold' && (
+                            <div>
+                              <div className="text-xs text-emerald-600 font-bold">
+                                Profit: ₹{profit.toLocaleString('en-IN')}
+                              </div>
+                              <div className="text-xs text-slate-500">
+                                Margin: {profitMargin}%
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-900">
-                        {new Date(item.purchase_date).toLocaleDateString('en-IN')}
-                      </td>
                       <td className="px-6 py-4">
-                        <button className="text-slate-400 hover:text-slate-600 transition-colors p-2 rounded-lg hover:bg-slate-100">
-                          <span className="text-lg">⋯</span>
-                        </button>
+                        <div className="text-sm text-slate-600">
+                          {new Date(item.purchase_date).toLocaleDateString('en-IN')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <EditInventoryDialog item={item} />
+                        <DeleteConfirmationDialog
+                          title="Delete Inventory Item"
+                          description={`Are you sure you want to delete ${item.brand} ${item.model} (IMEI: ${item.imei})? This action cannot be undone.`}
+                          onDelete={() => handleDelete(item.id)}
+                        />
                       </td>
                     </tr>
                   );
@@ -252,6 +221,89 @@ const Inventory = () => {
             </table>
           </div>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4">
+          {inventory?.map((item) => {
+            const profit = parseFloat(item.sale_price.toString()) - parseFloat(item.purchase_price.toString());
+            const profitMargin = ((profit / parseFloat(item.purchase_price.toString())) * 100).toFixed(1);
+            
+            return (
+              <div key={item.id} className="bg-white rounded-xl border border-slate-200 shadow-md p-4 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="text-lg font-bold text-slate-900">{item.brand}</div>
+                    <div className="text-sm font-medium text-slate-700">{item.model}</div>
+                    <div className="text-xs text-slate-500">{item.variant}</div>
+                  </div>
+                  <Badge variant="secondary" className={getStatusColor(item.status)}>
+                    {item.status}
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">IMEI:</span>
+                    <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{item.imei}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">Purchase:</span>
+                    <span className="text-xs">₹{parseFloat(item.purchase_price.toString()).toLocaleString('en-IN')}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-xs text-slate-600">Sale Price:</span>
+                    <span className="text-xs font-bold">₹{parseFloat(item.sale_price.toString()).toLocaleString('en-IN')}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <Badge variant="secondary" className={getConditionColor(item.condition)}>
+                      {item.condition}
+                    </Badge>
+                    {item.status === 'Sold' && (
+                      <div className="text-right">
+                        <div className="text-xs text-emerald-600 font-bold">
+                          Profit: ₹{profit.toLocaleString('en-IN')}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Margin: {profitMargin}%
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-2 border-t">
+                  <EditInventoryDialog item={item} />
+                  <DeleteConfirmationDialog
+                    title="Delete Inventory Item"
+                    description={`Are you sure you want to delete ${item.brand} ${item.model} (IMEI: ${item.imei})? This action cannot be undone.`}
+                    onDelete={() => handleDelete(item.id)}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-200 shadow-md p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-6 w-1/3" />
+                  <Skeleton className="h-4 w-1/4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
