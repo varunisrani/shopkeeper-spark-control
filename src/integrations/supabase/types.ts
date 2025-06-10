@@ -58,6 +58,7 @@ export type Database = {
           features: string[]
           id: string
           main_image: string
+          maps_link: string | null
           name: string
           pg_category: string
           updated_at: string | null
@@ -72,6 +73,7 @@ export type Database = {
           features?: string[]
           id?: string
           main_image: string
+          maps_link?: string | null
           name: string
           pg_category: string
           updated_at?: string | null
@@ -86,6 +88,7 @@ export type Database = {
           features?: string[]
           id?: string
           main_image?: string
+          maps_link?: string | null
           name?: string
           pg_category?: string
           updated_at?: string | null
@@ -388,6 +391,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          address_field: string | null
           created_at: string
           email: string | null
           id: string
@@ -397,6 +401,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          address_field?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -406,6 +411,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          address_field?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -722,18 +728,25 @@ export type Database = {
       inventory: {
         Row: {
           additional_notes: string | null
+          additional_sale_notes: string | null
           battery_health: number | null
           brand: string
           color: string | null
           condition: string
           created_at: string
+          customer_address: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          exchange_old_phone: boolean | null
           id: string
           imei: string
           inward_by: string | null
           model: string
+          payment_method: string | null
           purchase_date: string
           purchase_price: number
           quantity: number | null
+          sale_date: string | null
           sale_price: number
           sold_date: string | null
           status: string
@@ -745,18 +758,25 @@ export type Database = {
         }
         Insert: {
           additional_notes?: string | null
+          additional_sale_notes?: string | null
           battery_health?: number | null
           brand: string
           color?: string | null
           condition?: string
           created_at?: string
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          exchange_old_phone?: boolean | null
           id?: string
           imei: string
           inward_by?: string | null
           model: string
+          payment_method?: string | null
           purchase_date: string
           purchase_price: number
           quantity?: number | null
+          sale_date?: string | null
           sale_price: number
           sold_date?: string | null
           status?: string
@@ -768,18 +788,25 @@ export type Database = {
         }
         Update: {
           additional_notes?: string | null
+          additional_sale_notes?: string | null
           battery_health?: number | null
           brand?: string
           color?: string | null
           condition?: string
           created_at?: string
+          customer_address?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          exchange_old_phone?: boolean | null
           id?: string
           imei?: string
           inward_by?: string | null
           model?: string
+          payment_method?: string | null
           purchase_date?: string
           purchase_price?: number
           quantity?: number | null
+          sale_date?: string | null
           sale_price?: number
           sold_date?: string | null
           status?: string
@@ -1162,11 +1189,15 @@ export type Database = {
       }
       sales: {
         Row: {
+          additional_sale_notes: string | null
           created_at: string
+          customer_address: string | null
           customer_id: string | null
           discount: number | null
+          exchange_old_phone: boolean | null
           final_amount: number
           id: string
+          imei_serial: string | null
           inventory_id: string | null
           payment_method: string
           sale_date: string
@@ -1176,11 +1207,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          additional_sale_notes?: string | null
           created_at?: string
+          customer_address?: string | null
           customer_id?: string | null
           discount?: number | null
+          exchange_old_phone?: boolean | null
           final_amount: number
           id?: string
+          imei_serial?: string | null
           inventory_id?: string | null
           payment_method: string
           sale_date?: string
@@ -1190,11 +1225,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          additional_sale_notes?: string | null
           created_at?: string
+          customer_address?: string | null
           customer_id?: string | null
           discount?: number | null
+          exchange_old_phone?: boolean | null
           final_amount?: number
           id?: string
+          imei_serial?: string | null
           inventory_id?: string | null
           payment_method?: string
           sale_date?: string

@@ -21,6 +21,14 @@ export interface InventoryItem {
   additional_notes?: string;
   status: string;
   purchase_date: string;
+  sale_date?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  payment_method?: string;
+  exchange_old_phone?: boolean;
+  additional_sale_notes?: string;
+  sold_date?: string;
   suppliers?: {
     name: string;
   };
@@ -43,6 +51,13 @@ export interface NewInventoryItem {
   additional_notes?: string;
   supplier_id: string;
   purchase_date: string;
+  sale_date?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_address?: string;
+  payment_method?: string;
+  exchange_old_phone?: boolean;
+  additional_sale_notes?: string;
 }
 
 export const useInventory = () => {
@@ -97,6 +112,13 @@ export const useAddInventory = () => {
           additional_notes: newItem.additional_notes,
           supplier_id: newItem.supplier_id || null,
           purchase_date: newItem.purchase_date,
+          sale_date: newItem.sale_date || null,
+          customer_name: newItem.customer_name,
+          customer_phone: newItem.customer_phone,
+          customer_address: newItem.customer_address,
+          payment_method: newItem.payment_method,
+          exchange_old_phone: newItem.exchange_old_phone || false,
+          additional_sale_notes: newItem.additional_sale_notes,
           status: 'In Stock'
         }])
         .select()

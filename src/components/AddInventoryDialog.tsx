@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
 import { useSuppliers } from '@/hooks/useSuppliers';
@@ -29,6 +30,13 @@ const AddInventoryDialog = () => {
     additional_notes: '',
     supplier_id: '',
     purchase_date: new Date().toISOString().split('T')[0],
+    sale_date: '',
+    customer_name: '',
+    customer_phone: '',
+    customer_address: '',
+    payment_method: 'Cash',
+    exchange_old_phone: false,
+    additional_sale_notes: '',
   });
 
   const { data: suppliers } = useSuppliers();
@@ -72,6 +80,13 @@ const AddInventoryDialog = () => {
           additional_notes: '',
           supplier_id: '',
           purchase_date: new Date().toISOString().split('T')[0],
+          sale_date: '',
+          customer_name: '',
+          customer_phone: '',
+          customer_address: '',
+          payment_method: 'Cash',
+          exchange_old_phone: false,
+          additional_sale_notes: '',
         });
       },
     });
@@ -82,6 +97,14 @@ const AddInventoryDialog = () => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
+    }));
+  };
+
+  const handleCheckboxChange = (field: keyof NewInventoryItem, checked: boolean) => {
+    console.log(`Updating ${field}:`, checked);
+    setFormData(prev => ({
+      ...prev,
+      [field]: checked,
     }));
   };
 
@@ -190,7 +213,7 @@ const AddInventoryDialog = () => {
                 type="number"
                 value={formData.purchase_price}
                 onChange={(e) => handleInputChange('purchase_price', e.target.value)}
-                placeholder="Enter purchase price"
+                placeholder=""
                 className="mt-1"
               />
             </div>
@@ -201,7 +224,7 @@ const AddInventoryDialog = () => {
                 type="number"
                 value={formData.sale_price}
                 onChange={(e) => handleInputChange('sale_price', e.target.value)}
-                placeholder="Enter sale price"
+                placeholder=""
                 className="mt-1"
               />
             </div>
@@ -218,7 +241,7 @@ const AddInventoryDialog = () => {
                 max="100"
                 value={formData.battery_health}
                 onChange={(e) => handleInputChange('battery_health', e.target.value)}
-                placeholder="e.g. 95"
+                placeholder=""
                 className="mt-1"
               />
             </div>
@@ -229,7 +252,7 @@ const AddInventoryDialog = () => {
                 type="number"
                 value={formData.warranty_months}
                 onChange={(e) => handleInputChange('warranty_months', e.target.value)}
-                placeholder="e.g. 12"
+                placeholder=""
                 className="mt-1"
               />
             </div>
@@ -245,7 +268,7 @@ const AddInventoryDialog = () => {
                 min="1"
                 value={formData.quantity}
                 onChange={(e) => handleInputChange('quantity', e.target.value)}
-                placeholder="Enter quantity"
+                placeholder=""
                 className="mt-1"
               />
             </div>
@@ -261,7 +284,72 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 7: Venue and Inward By */}
+          {/* Row 7: Sale Date and Customer Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="sale_date" className="text-sm font-medium text-gray-700">Sale Date</Label>
+              <Input
+                id="sale_date"
+                type="date"
+                value={formData.sale_date}
+                onChange={(e) => handleInputChange('sale_date', e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customer_name" className="text-sm font-medium text-gray-700">Customer Name</Label>
+              <Input
+                id="customer_name"
+                value={formData.customer_name}
+                onChange={(e) => handleInputChange('customer_name', e.target.value)}
+                placeholder="Enter customer name"
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Row 8: Customer Phone and Payment Method */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="customer_phone" className="text-sm font-medium text-gray-700">Customer Phone</Label>
+              <Input
+                id="customer_phone"
+                value={formData.customer_phone}
+                onChange={(e) => handleInputChange('customer_phone', e.target.value)}
+                placeholder="Enter phone number"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="payment_method" className="text-sm font-medium text-gray-700">Payment Method</Label>
+              <Select value={formData.payment_method} onValueChange={(value) => handleInputChange('payment_method', value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Cash">Cash</SelectItem>
+                  <SelectItem value="Card">Card</SelectItem>
+                  <SelectItem value="UPI">UPI</SelectItem>
+                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Row 9: Customer Address */}
+          <div>
+            <Label htmlFor="customer_address" className="text-sm font-medium text-gray-700">Customer Address</Label>
+            <Textarea
+              id="customer_address"
+              value={formData.customer_address}
+              onChange={(e) => handleInputChange('customer_address', e.target.value)}
+              placeholder="Enter customer address"
+              rows={2}
+              className="mt-1"
+            />
+          </div>
+
+          {/* Row 10: Venue and Inward By */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="venue" className="text-sm font-medium text-gray-700">Venue</Label>
@@ -285,7 +373,7 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 8: Supplier */}
+          {/* Row 11: Supplier */}
           <div>
             <Label htmlFor="supplier_id" className="text-sm font-medium text-gray-700">Supplier</Label>
             <Select value={formData.supplier_id} onValueChange={(value) => handleInputChange('supplier_id', value)}>
@@ -302,14 +390,39 @@ const AddInventoryDialog = () => {
             </Select>
           </div>
 
-          {/* Row 9: Additional Notes */}
+          {/* Row 12: Exchange Old Phone */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="exchange_old_phone"
+              checked={formData.exchange_old_phone}
+              onCheckedChange={(checked) => handleCheckboxChange('exchange_old_phone', checked as boolean)}
+            />
+            <Label htmlFor="exchange_old_phone" className="text-sm font-medium text-gray-700">
+              Exchange Old Phone
+            </Label>
+          </div>
+
+          {/* Row 13: Additional Notes */}
           <div>
-            <Label htmlFor="additional_notes" className="text-sm font-medium text-gray-700">Additional Notes (Optional)</Label>
+            <Label htmlFor="additional_notes" className="text-sm font-medium text-gray-700">Additional Notes</Label>
             <Textarea
               id="additional_notes"
               value={formData.additional_notes}
               onChange={(e) => handleInputChange('additional_notes', e.target.value)}
               placeholder="Any additional information about this product"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+
+          {/* Row 14: Additional Sale Notes */}
+          <div>
+            <Label htmlFor="additional_sale_notes" className="text-sm font-medium text-gray-700">Additional Sale Notes</Label>
+            <Textarea
+              id="additional_sale_notes"
+              value={formData.additional_sale_notes}
+              onChange={(e) => handleInputChange('additional_sale_notes', e.target.value)}
+              placeholder="Any additional sale-related information"
               rows={3}
               className="mt-1"
             />
