@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
 import { useSuppliers } from '@/hooks/useSuppliers';
+import { toast } from 'sonner';
 
 const AddInventoryDialog = () => {
   const [open, setOpen] = useState(false);
@@ -87,6 +89,14 @@ const AddInventoryDialog = () => {
           exchange_old_phone: false,
           additional_sale_notes: '',
         });
+      },
+      onError: (error: any) => {
+        console.error('Error adding inventory:', error);
+        if (error?.code === '23505' && error?.details?.includes('imei')) {
+          toast.error(`IMEI ${formData.imei} already exists in inventory. Please use a different IMEI number.`);
+        } else {
+          toast.error('Failed to add inventory item. Please try again.');
+        }
       },
     });
   };
@@ -203,7 +213,7 @@ const AddInventoryDialog = () => {
             </div>
           </div>
 
-          {/* Row 4: Purchase Price Only (Sale Price Removed) */}
+          {/* Row 4: Purchase Price and Purchase Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label htmlFor="purchase_price" className="text-sm font-medium text-gray-700">Purchase Price (₹)</Label>
@@ -346,6 +356,22 @@ const AddInventoryDialog = () => {
       </DialogContent>
     </Dialog>
   );
+};
+
+const handleInputChange = (field: keyof NewInventoryItem, value: string) => {
+  console.log(`Updating ${field}:`, value);
+  setFormData(prev => ({
+    ...prev,
+    [field]: value,
+  }));
+};
+
+const handleCheckboxChange = (field: keyof NewInventoryItem, checked: boolean) => {
+  console.log(`Updating ${field}:`, checked);
+  setFormData(prev => ({
+    ...prev,
+    [field]: checked,
+  }));
 };
 
 export default AddInventoryDialog;

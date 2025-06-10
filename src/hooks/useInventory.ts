@@ -139,7 +139,7 @@ export const useAddInventory = () => {
     },
     onError: (error) => {
       console.error('Failed to add inventory item:', error);
-      toast.error('Failed to add inventory item. Please try again.');
+      // Don't show generic error toast here as we handle specific errors in the component
     },
   });
 };
