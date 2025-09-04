@@ -1,13 +1,11 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
 import DashboardStats from '@/components/DashboardStats';
 import SalesChart from '@/components/SalesChart';
 import RecentSales from '@/components/RecentSales';
 import StockStatus from '@/components/StockStatus';
 import AddInventoryDialog from '@/components/AddInventoryDialog';
 import RecordSaleDialog from '@/components/RecordSaleDialog';
-import InventoryDataFix from '@/components/InventoryDataFix';
 
 const Dashboard = () => {
   return (
@@ -27,13 +25,6 @@ const Dashboard = () => {
         </div>
 
         <DashboardStats />
-
-        {/* Temporary Inventory Fix Utility */}
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-orange-800 mb-2">🔧 Inventory Data Issue Detected</h2>
-          <p className="text-orange-700 text-sm mb-4">Some inventory items show negative profits because sale_price = ₹0. Use this utility to fix the data:</p>
-          <InventoryDataFix />
-        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           <div className="xl:col-span-2 order-2 xl:order-1">
