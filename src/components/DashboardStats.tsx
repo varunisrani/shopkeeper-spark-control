@@ -3,6 +3,7 @@ import React from 'react';
 import { TrendingUp, ShoppingCart, Package, DollarSign } from 'lucide-react';
 import { useDashboardStats } from '@/hooks/useDashboardData';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatIndianCurrency } from '@/lib/calculations';
 
 interface StatCardProps {
   title: string;
@@ -44,7 +45,7 @@ const DashboardStats = () => {
   const statsData = [
     {
       title: 'Total Revenue',
-      value: isLoading ? '₹0' : `₹${stats?.totalRevenue?.toLocaleString('en-IN') || '0'}`,
+      value: isLoading ? '₹0' : formatIndianCurrency(stats?.totalRevenue || 0),
       change: '+20.1% from last month',
       icon: <TrendingUp className="w-full h-full" />,
       gradient: 'bg-gradient-to-br from-emerald-500 to-emerald-600'
@@ -65,7 +66,7 @@ const DashboardStats = () => {
     },
     {
       title: 'Total Profit',
-      value: isLoading ? '₹0' : `₹${stats?.totalProfit?.toLocaleString('en-IN') || '0'}`,
+      value: isLoading ? '₹0' : formatIndianCurrency(stats?.totalProfit || 0),
       change: '+15.2% from last month',
       icon: <DollarSign className="w-full h-full" />,
       gradient: 'bg-gradient-to-br from-orange-500 to-orange-600'

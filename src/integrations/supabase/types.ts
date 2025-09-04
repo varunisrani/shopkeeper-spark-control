@@ -388,6 +388,24 @@ export type Database = {
         }
         Relationships: []
       }
+      c_mobile: {
+        Row: {
+          id: number
+          company_name: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          company_name: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          company_name?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -467,6 +485,75 @@ export type Database = {
             columns: ["room_id"]
             isOneToOne: false
             referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exchange_phones: {
+        Row: {
+          id: string
+          sales_id: string | null
+          brand: string
+          model: string
+          condition: string
+          storage: string | null
+          color: string | null
+          imei: string | null
+          exchange_value: number
+          specifications: string | null
+          notes: string | null
+          added_to_inventory: boolean
+          inventory_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          sales_id?: string | null
+          brand: string
+          model: string
+          condition: string
+          storage?: string | null
+          color?: string | null
+          imei?: string | null
+          exchange_value?: number
+          specifications?: string | null
+          notes?: string | null
+          added_to_inventory?: boolean
+          inventory_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          sales_id?: string | null
+          brand?: string
+          model?: string
+          condition?: string
+          storage?: string | null
+          color?: string | null
+          imei?: string | null
+          exchange_value?: number
+          specifications?: string | null
+          notes?: string | null
+          added_to_inventory?: boolean
+          inventory_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_phones_sales_id_fkey"
+            columns: ["sales_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exchange_phones_inventory_id_fkey"
+            columns: ["inventory_id"]
+            isOneToOne: false
+            referencedRelation: "inventory"
             referencedColumns: ["id"]
           },
         ]

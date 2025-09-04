@@ -8,11 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useInventory } from '@/hooks/useInventory';
+import { useExchangePhones } from '@/hooks/useExchangePhones';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ShoppingCart, Calculator } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { 
+  calculateFinalAmount, 
+  formatCurrency, 
+  parseAmount, 
+  validateMonetaryInput,
+  formatIndianCurrency,
+  ValidationResult 
+} from '@/lib/calculations';
 
 const RecordSaleDialog = () => {
   const [open, setOpen] = useState(false);
@@ -22,6 +31,7 @@ const RecordSaleDialog = () => {
   const [saleDate, setSaleDate] = useState('');
   const [hasExchange, setHasExchange] = useState(false);
   const [exchangeModel, setExchangeModel] = useState('');
+  const [exchangeBrand, setExchangeBrand] = useState('');
   const [exchangeValue, setExchangeValue] = useState('0');
   const [totalAmount, setTotalAmount] = useState('0');
   const [customerName, setCustomerName] = useState('');
@@ -29,11 +39,15 @@ const RecordSaleDialog = () => {
   const [customerAddress, setCustomerAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Cash');
   const [exchangeCondition, setExchangeCondition] = useState('');
-  const [exchangeBatteryHealth, setExchangeBatteryHealth] = useState('');
+  const [exchangeColor, setExchangeColor] = useState('');
+  const [exchangeStorage, setExchangeStorage] = useState('');
   const [exchangeImei, setExchangeImei] = useState('');
+  const [exchangeSpecs, setExchangeSpecs] = useState('');
+  const [exchangeNotes, setExchangeNotes] = useState('');
   const [notes, setNotes] = useState('');
 
   const { data: inventory } = useInventory();
+  const { addExchangePhone } = useExchangePhones();
   const queryClient = useQueryClient();
 
   const availableInventory = inventory?.filter(item => item.status === 'In Stock') || [];
@@ -44,12 +58,13 @@ const RecordSaleDialog = () => {
     setSaleDate(today);
   }, []);
 
-  // Calculate total amount
+  // Calculate total amount with proper precision handling
   useEffect(() => {
     if (salePrice) {
-      const sale = parseFloat(salePrice) || 0;
-      const exchange = hasExchange ? (parseFloat(exchangeValue) || 0) : 0;
-      setTotalAmount((sale - exchange).toFixed(0));
+      const sale = parseAmount(salePrice);
+      const exchange = hasExchange ? parseAmount(exchangeValue) : 0;
+      const finalAmount = calculateFinalAmount(sale, exchange);
+      setTotalAmount(finalAmount.toString());
     } else {
       setTotalAmount('0');
     }
@@ -63,19 +78,27 @@ const RecordSaleDialog = () => {
     setSelectedInventory(value);
     const item = availableInventory.find(item => item.id === value);
     if (item) {
-      setSalePrice(item.sale_price.toString());
+      // For In Stock items, use the item's intended sale_price, but if it's 0, don't auto-fill
+      // This allows users to set their own selling price
+      if (item.sale_price && item.sale_price > 0) {
+        setSalePrice(formatCurrency(item.sale_price).toString());
+      } else {
+        // Don't auto-fill if sale_price is 0, let user enter manually
+        setSalePrice('');
+      }
     } else {
       setSalePrice('');
     }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0,
-    }).format(amount);
+  // Input validation helper
+  const validateInput = (value: string, fieldName: string) => {
+    const validation = validateMonetaryInput(value);
+    if (!validation.isValid) {
+      toast.error(`Invalid ${fieldName}: ${validation.error}`);
+      return false;
+    }
+    return true;
   };
 
   const recordSaleMutation = useMutation({
@@ -120,7 +143,10 @@ const RecordSaleDialog = () => {
 
       if (inventoryError) throw inventoryError;
 
-      const finalAmount = parseFloat(salePrice || '0') - (hasExchange ? parseFloat(exchangeValue || '0') : 0);
+      // Use standardized calculation with proper precision
+      const saleAmount = parseAmount(salePrice || '0');
+      const exchange = hasExchange ? parseAmount(exchangeValue || '0') : 0;
+      const finalAmount = calculateFinalAmount(saleAmount, exchange);
       const saleId = `SALE-${Date.now()}`;
 
       // Create sale record
@@ -130,8 +156,8 @@ const RecordSaleDialog = () => {
           sale_id: saleId,
           customer_id: customerId,
           inventory_id: selectedInventory,
-          sale_price: parseFloat(salePrice || '0'),
-          discount: hasExchange ? parseFloat(exchangeValue || '0') : 0,
+          sale_price: saleAmount,
+          discount: hasExchange ? parseAmount(exchangeValue || '0') : 0,
           final_amount: finalAmount,
           payment_method: paymentMethod,
           customer_address: customerAddress,
@@ -152,6 +178,7 @@ const RecordSaleDialog = () => {
           status: 'Sold',
           sold_date: saleDate,
           sale_date: saleDate,
+          sale_price: saleAmount, // ✅ FIX: Update sale_price in inventory
           customer_name: customerName,
           customer_phone: customerPhone,
           customer_address: customerAddress,
@@ -185,12 +212,29 @@ const RecordSaleDialog = () => {
             invoice_id: `INV-${Date.now()}`,
             sale_id: sale.id,
             customer_id: customerId,
-            subtotal: parseFloat(salePrice || '0'),
-            discount: hasExchange ? parseFloat(exchangeValue || '0') : 0,
+            subtotal: saleAmount,
+            discount: hasExchange ? parseAmount(exchangeValue || '0') : 0,
             total_amount: finalAmount,
           });
 
         if (invoiceError) throw invoiceError;
+      }
+
+      // Record exchange phone if applicable
+      if (hasExchange && exchangeBrand && exchangeModel) {
+        await addExchangePhone({
+          sales_id: sale.id,
+          brand: exchangeBrand,
+          model: exchangeModel,
+          condition: exchangeCondition || 'Fair',
+          storage: exchangeStorage,
+          color: exchangeColor,
+          imei: exchangeImei,
+          exchange_value: parseAmount(exchangeValue || '0'),
+          specifications: exchangeSpecs,
+          notes: exchangeNotes,
+          added_to_inventory: false,
+        });
       }
 
       return sale;
@@ -218,6 +262,7 @@ const RecordSaleDialog = () => {
     setSaleDate(new Date().toISOString().split('T')[0]);
     setHasExchange(false);
     setExchangeModel('');
+    setExchangeBrand('');
     setExchangeValue('0');
     setTotalAmount('0');
     setCustomerName('');
@@ -225,8 +270,11 @@ const RecordSaleDialog = () => {
     setCustomerAddress('');
     setPaymentMethod('Cash');
     setExchangeCondition('');
-    setExchangeBatteryHealth('');
+    setExchangeColor('');
+    setExchangeStorage('');
     setExchangeImei('');
+    setExchangeSpecs('');
+    setExchangeNotes('');
     setNotes('');
   };
 
@@ -303,9 +351,17 @@ const RecordSaleDialog = () => {
                 id="sale-price"
                 type="number"
                 min="0"
+                step="0.01"
                 value={salePrice}
-                onChange={(e) => setSalePrice(e.target.value)}
-                placeholder="Enter sale price"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (validateInput(value, 'sale price')) {
+                    setSalePrice(value);
+                  } else {
+                    setSalePrice(value); // Still set it for user feedback, validation will show error
+                  }
+                }}
+                placeholder="Enter sale price (e.g., 25000.50)"
               />
             </div>
             <div className="space-y-2">
@@ -386,14 +442,27 @@ const RecordSaleDialog = () => {
           {/* Exchange Details */}
           {hasExchange && (
             <div className="bg-gray-50 p-4 rounded-md border space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <h3 className="font-medium text-lg text-gray-900 mb-4">Exchange Phone Details</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="exchange-model">Exchange Phone Model</Label>
+                  <Label htmlFor="exchange-brand">Brand *</Label>
+                  <Input
+                    id="exchange-brand"
+                    value={exchangeBrand}
+                    onChange={(e) => setExchangeBrand(e.target.value)}
+                    placeholder="e.g. Apple, Samsung"
+                    required={hasExchange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-model">Model *</Label>
                   <Input
                     id="exchange-model"
                     value={exchangeModel}
                     onChange={(e) => setExchangeModel(e.target.value)}
-                    placeholder="e.g. iPhone 11"
+                    placeholder="e.g. iPhone 11, Galaxy S21"
+                    required={hasExchange}
                   />
                 </div>
                 <div className="space-y-2">
@@ -402,14 +471,22 @@ const RecordSaleDialog = () => {
                     id="exchange-value"
                     type="number"
                     min="0"
+                    step="0.01"
                     value={exchangeValue}
-                    onChange={(e) => setExchangeValue(e.target.value)}
-                    placeholder="0"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (validateInput(value, 'exchange value')) {
+                        setExchangeValue(value);
+                      } else {
+                        setExchangeValue(value);
+                      }
+                    }}
+                    placeholder="0.00"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="exchange-condition">Condition</Label>
                   <Select value={exchangeCondition} onValueChange={setExchangeCondition}>
@@ -417,35 +494,63 @@ const RecordSaleDialog = () => {
                       <SelectValue placeholder="Select condition" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="like-new">Like New</SelectItem>
-                      <SelectItem value="excellent">Excellent</SelectItem>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="fair">Fair</SelectItem>
-                      <SelectItem value="poor">Poor</SelectItem>
+                      <SelectItem value="Excellent">Excellent</SelectItem>
+                      <SelectItem value="Good">Good</SelectItem>
+                      <SelectItem value="Fair">Fair</SelectItem>
+                      <SelectItem value="Poor">Poor</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="exchange-battery">Battery Health (%)</Label>
+                  <Label htmlFor="exchange-storage">Storage</Label>
                   <Input
-                    id="exchange-battery"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={exchangeBatteryHealth}
-                    onChange={(e) => setExchangeBatteryHealth(e.target.value)}
-                    placeholder="e.g. 85"
+                    id="exchange-storage"
+                    value={exchangeStorage}
+                    onChange={(e) => setExchangeStorage(e.target.value)}
+                    placeholder="e.g. 64GB, 128GB"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="exchange-color">Color</Label>
+                  <Input
+                    id="exchange-color"
+                    value={exchangeColor}
+                    onChange={(e) => setExchangeColor(e.target.value)}
+                    placeholder="e.g. Black, White"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="exchange-imei">Exchange Phone IMEI/Serial</Label>
+                <Label htmlFor="exchange-imei">IMEI/Serial Number</Label>
                 <Input 
                   id="exchange-imei" 
                   value={exchangeImei}
                   onChange={(e) => setExchangeImei(e.target.value)}
-                  placeholder="Enter IMEI or Serial number" 
+                  placeholder="Enter IMEI or Serial number"
+                  className="font-mono"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="exchange-specs">Specifications</Label>
+                <Textarea
+                  id="exchange-specs"
+                  value={exchangeSpecs}
+                  onChange={(e) => setExchangeSpecs(e.target.value)}
+                  placeholder="Additional specs like battery health, screen condition, etc."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="exchange-notes">Exchange Notes</Label>
+                <Textarea
+                  id="exchange-notes"
+                  value={exchangeNotes}
+                  onChange={(e) => setExchangeNotes(e.target.value)}
+                  placeholder="Any additional notes about the exchange phone"
+                  rows={2}
                 />
               </div>
             </div>
@@ -480,18 +585,18 @@ const RecordSaleDialog = () => {
                 <div className="font-medium font-mono">{selectedItem?.imei}</div>
 
                 <div>Sale Price:</div>
-                <div className="font-medium">{formatCurrency(parseFloat(salePrice))}</div>
+                <div className="font-medium">{formatIndianCurrency(parseAmount(salePrice))}</div>
 
-                {hasExchange && parseFloat(exchangeValue) > 0 && (
+                {hasExchange && parseAmount(exchangeValue) > 0 && (
                   <>
                     <div>Exchange Value:</div>
-                    <div className="font-medium">-{formatCurrency(parseFloat(exchangeValue))}</div>
+                    <div className="font-medium">-{formatIndianCurrency(parseAmount(exchangeValue))}</div>
                   </>
                 )}
 
                 <div className="text-base pt-2 font-bold text-emerald-800">Amount to Collect:</div>
                 <div className="text-base font-bold pt-2 text-emerald-600">
-                  {formatCurrency(parseInt(totalAmount))}
+                  {formatIndianCurrency(parseAmount(totalAmount))}
                 </div>
               </div>
             </div>

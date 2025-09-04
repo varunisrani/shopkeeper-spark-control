@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Plus } from 'lucide-react';
 import { useAddInventory, NewInventoryItem } from '@/hooks/useInventory';
+import { useCompanies, useAddCompany } from '@/hooks/useCompanies';
 import { toast } from 'sonner';
 
 const AddInventoryDialog = () => {
@@ -38,8 +39,33 @@ const AddInventoryDialog = () => {
   });
 
   const addInventoryMutation = useAddInventory();
+  const { data: companies, isLoading: companiesLoading, error: companiesError } = useCompanies();
+  const addCompanyMutation = useAddCompany();
 
-  const brands = ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Oppo', 'Vivo', 'Realme', 'Nothing', 'Google'];
+  // State for add brand functionality
+  const [showAddBrand, setShowAddBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState('');
+
+  // Fallback brands in case database fetch fails
+  const fallbackBrands = ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Oppo', 'Vivo', 'Realme', 'Nothing', 'Google'];
+
+  const handleAddNewBrand = async () => {
+    if (!newBrandName.trim()) {
+      toast.error('Please enter a brand name');
+      return;
+    }
+
+    try {
+      const newCompany = await addCompanyMutation.mutateAsync(newBrandName);
+      // Auto-select the newly added brand
+      setFormData(prev => ({ ...prev, brand: newCompany.company_name }));
+      // Reset the form state
+      setNewBrandName('');
+      setShowAddBrand(false);
+    } catch (error) {
+      // Error handling is done in the mutation
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,17 +156,84 @@ const AddInventoryDialog = () => {
           {/* Row 1: Brand and Model */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="brand" className="text-sm font-medium text-gray-700">Brand</Label>
+                <Button 
+                  type="button"
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAddBrand(!showAddBrand)}
+                  className="text-xs"
+                  disabled={showAddBrand}
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add New Brand
+                </Button>
+              </div>
+              
+              {showAddBrand && (
+                <div className="mt-2 p-3 border border-blue-200 rounded-lg bg-blue-50">
+                  <Label htmlFor="new-brand" className="text-xs font-medium text-blue-800">New Brand Name</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="new-brand"
+                      type="text"
+                      value={newBrandName}
+                      onChange={(e) => setNewBrandName(e.target.value)}
+                      placeholder="Enter brand name (e.g., Xiaomi)"
+                      className="flex-1 text-sm"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddNewBrand();
+                        }
+                      }}
+                    />
+                    <Button 
+                      type="button"
+                      onClick={handleAddNewBrand}
+                      disabled={addCompanyMutation.isPending || !newBrandName.trim()}
+                      className="bg-blue-600 hover:bg-blue-700 text-xs px-3"
+                    >
+                      {addCompanyMutation.isPending ? 'Adding...' : 'Add'}
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowAddBrand(false);
+                        setNewBrandName('');
+                      }}
+                      className="text-xs px-3"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
               <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder="Select brand" />
                 </SelectTrigger>
                 <SelectContent>
-                  {brands.map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
-                    </SelectItem>
-                  ))}
+                  {companiesLoading ? (
+                    <SelectItem value="" disabled>Loading companies...</SelectItem>
+                  ) : companiesError ? (
+                    // Fallback to hardcoded brands if database fails
+                    fallbackBrands.map((brand) => (
+                      <SelectItem key={brand} value={brand}>
+                        {brand}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    // Use database companies
+                    companies?.map((company) => (
+                      <SelectItem key={company.id} value={company.company_name}>
+                        {company.company_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
