@@ -1,73 +1,66 @@
-# Welcome to your Lovable project
+# Shopkeeper Spark Control
 
-## Project info
+Shopkeeper Spark Control is a browser-based mobile-phone shop dashboard for tracking inventory, sales, exchanges, invoices, suppliers, and transactions.
 
-**URL**: https://lovable.dev/projects/6ab08c6f-7801-468f-b1ef-14f78a71f3f8
+## Core features
 
-## How can I edit this code?
+- Dashboard summaries, recent sales, stock status, and sales charts.
+- Inventory creation and editing with handset, IMEI, condition, pricing, supplier, and warranty details.
+- Sale recording, customer records, payment transactions, and exchange-phone tracking.
+- Invoice management and client-side PDF generation.
+- Supabase-backed queries and mutations with React Query caching.
+- Vitest coverage for calculation, dashboard, chart, and sale-dialog behavior.
 
-There are several ways of editing your application.
+## Technology stack
 
-**Use Lovable**
+- React 18, TypeScript, and Vite 5
+- React Router and TanStack React Query
+- Supabase JavaScript client
+- Tailwind CSS, shadcn/ui (Radix UI), and Lucide icons
+- Recharts, jsPDF, Vitest, and Testing Library
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6ab08c6f-7801-468f-b1ef-14f78a71f3f8) and start prompting.
+## Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 20 or newer
+- npm (a `package-lock.json` is included)
+- Access to the Supabase project and schema expected by the generated client and migrations
 
-**Use your preferred IDE**
+## Local setup
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone https://github.com/varunisrani/shopkeeper-spark-control.git
+cd shopkeeper-spark-control
+npm ci
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Other verified scripts are:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run build
+npm run preview
+npm run lint
+npm run test:run
+```
 
-**Use GitHub Codespaces**
+Use `npm run test` for Vitest watch mode or `npm run test:ui` for its UI.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Configuration
 
-## What technologies are used for this project?
+The current generated Supabase client does not read environment variables; its project URL and publishable client key are embedded in `src/integrations/supabase/client.ts`. No environment variable names are defined by this repository.
 
-This project is built with:
+## Project structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```text
+src/pages/                  Dashboard, inventory, exchanges, invoices, and transactions
+src/components/             Forms, charts, navigation, status displays, and UI primitives
+src/hooks/                  Supabase-backed domain queries and mutations
+src/integrations/supabase/  Generated database client and TypeScript types
+src/lib/                    Calculations and shared utilities
+src/utils/                  Formatting and PDF generation
+supabase/migrations/        Database migration SQL
+```
 
-## How can I deploy this project?
+## Status and limitations
 
-Simply open [Lovable](https://lovable.dev/projects/6ab08c6f-7801-468f-b1ef-14f78a71f3f8) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This is a client application coupled to an existing Supabase schema. A fresh clone can build without private configuration, but live data operations depend on the configured remote project, its availability, and its access policies. The repository does not include an authentication flow.
